@@ -2,13 +2,16 @@
   "use strict";
 
   // Puja's neural voice runs locally in the visitor's browser.
-  // The Piper web package is loaded only when Puja first speaks, so the
-  // website itself stays lightweight until voice is actually requested.
+  // The Piper web package is loaded only when Puja first speaks.
   const PACKAGE_URL = "https://esm.sh/@mintplex-labs/piper-tts-web@1.0.5";
   const VOICE_ID = "en_US-hfc_female-medium";
 
   const nativeSynthesis = window.speechSynthesis;
   if (!nativeSynthesis) return;
+
+  const nativeSpeak = nativeSynthesis.speak.bind(nativeSynthesis);
+  const nativeCancel = nativeSynthesis.cancel.bind(nativeSynthesis);
+  const nativeResume = nativeSynthesis.resume.bind(nativeSynthesis);
 
   let modulePromise = null;
   let audio = null;
@@ -48,7 +51,6 @@
     const text = String(utterance?.text || "").trim();
     if (!text) return;
 
-    const myGeneration = ++generation;
     stopAudio();
     const activeGeneration = generation;
 
@@ -82,17 +84,10 @@
     } catch (error) {
       console.warn("Puja neural voice unavailable; using browser voice fallback.", error);
       if (activeGeneration !== generation) return;
-      try { utterance.onerror?.({ type: "error", error, utterance }); } catch (_) {}
       stopAudio();
-      // The wrapper deliberately falls back to the original browser voice.
-      try { nativeSynthesis.speak(utterance); } catch (_) {}
+      try { nativeSpeak(utterance); } catch (_) {}
     }
   }
-
-  // Preserve the original browser voice as a reliable fallback.
-  const nativeSpeak = nativeSynthesis.speak.bind(nativeSynthesis);
-  const nativeCancel = nativeSynthesis.cancel.bind(nativeSynthesis);
-  const nativeResume = nativeSynthesis.resume.bind(nativeSynthesis);
 
   try {
     nativeSynthesis.speak = utterance => neuralSpeak(utterance);
