@@ -150,7 +150,7 @@
           connecting=false;
           setupReady=false;
         }
-        fail(new Error("Puja Live connection timed out."));
+        fail(new Error("Puja Live setup timed out after 15 seconds. The WebSocket opened but Gemini did not complete setup."));
       },15000);
 
       ws.onopen=()=>{
@@ -285,17 +285,18 @@
         }
       };
 
-      ws.onerror=()=>{
+      ws.onerror=(event)=>{
         if(socket!==ws)return;
 
         clearTimeout(timeout);
         setupReady=false;
+        connecting=false;
 
-        setState(null,"Puja Live connection error");
+        console.error("Puja Live WebSocket error",event);
 
-        if(!settled){
-          connecting=false;
-        }
+        setState(null,"Puja Live WebSocket error");
+
+        fail(new Error("Puja Live WebSocket error. Check the browser console for the underlying connection error."));
       };
 
       ws.onclose=event=>{
@@ -311,7 +312,7 @@
         if(!wasReady&&!settled){
           fail(
             new Error(
-              `Gemini Live closed the connection (code ${event.code}${event.reason?`: ${event.reason}`:""}).`
+              `Gemini Live closed before setup completed (code ${event.code}${event.reason?`: ${event.reason}`:""}).`
             )
           );
         }
