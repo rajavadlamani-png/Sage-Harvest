@@ -72,7 +72,7 @@
       const wsUrl="wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token="+encodeURIComponent(td.token);
       socket=new WebSocket(wsUrl);
       const timeout=setTimeout(()=>{try{socket.close();}catch(_){}connecting=false;reject(new Error("Puja Live connection timed out."));},15000);
-      socket.onopen=()=>socket.send(JSON.stringify({setup:{model:MODEL,generationConfig:{responseModalities:["AUDIO"],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:VOICE}}}},inputAudioTranscription:{},outputAudioTranscription:{}}}));
+      socket.onopen=()=>socket.send(JSON.stringify({setup:{model:MODEL,responseModalities:["AUDIO"],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:VOICE}}},inputAudioTranscription:{},outputAudioTranscription:{},sessionResumption:{}}}));
       socket.onmessage=async event=>{
         let m;try{m=JSON.parse(event.data);}catch(_){return;}
         if(m.setupComplete){clearTimeout(timeout);setupReady=true;connecting=false;setState(null,"Gemini Live · ready");resolve();return;}
