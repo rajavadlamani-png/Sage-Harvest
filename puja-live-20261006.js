@@ -10,7 +10,7 @@
         avatar=$("pujaAvatar"), mini=$("pujaMiniAvatar"), status=$("pujaStatus"), stopBtn=$("pujaStopSpeaking");
   if(!panel||!launcher||!form||!input||!messages)return;
 
-  let socket=null, tokenPromise=null, setupReady=false, connecting=false;
+  let socket=null, setupReady=false, connecting=false, suppressPlayback=false;
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0;
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
   let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
@@ -52,69 +52,291 @@
     for(let i=0;i<pcm.length;i++)channel[i]=pcm[i]/32768;
     const source=outputContext.createBufferSource();source.buffer=buffer;source.connect(outputContext.destination);
     nextPlayTime=Math.max(nextPlayTime,outputContext.currentTime+0.02);source.start(nextPlayTime);nextPlayTime+=buffer.duration;
-    playbackSources.add(source);source.onended=()=>playbackSources.delete(source);setState("speaking","Puja is speaking · Gemini Live");
+    playbackSources.add(source);source.onended=()=>{playbackSources.delete(source);if(playbackSources.size===0&&!suppressPlayback){setState(null,listening?"Listening…":"Gemini Live · ready");}};setState("speaking","Puja is speaking · Gemini Live");
   }
   function stopPlayback(){
     for(const source of playbackSources){try{source.stop();}catch(_){}try{source.disconnect();}catch(_){}}
     playbackSources.clear();nextPlayTime=0;setState(null,listening?"Listening…":"Gemini Live · ready");
   }
   async function getLiveToken(){
-    if(!tokenPromise)tokenPromise=(async()=>{
-      const controller=new AbortController();
-      const timer=setTimeout(()=>controller.abort(),10000);
-      try{
-        const r=await fetch(LIVE_TOKEN_URL,{method:"POST",headers:{"Content-Type":"application/json"},signal:controller.signal});
-        let d={};try{d=await r.json();}catch(_){}
-        if(!r.ok||!d.token)throw new Error(d.error||`Puja Live token request failed (HTTP ${r.status}).`);
-        return d;
-      }catch(e){
-        if(e?.name==="AbortError")throw new Error("Puja Live token request timed out.");
-        throw e;
-      }finally{clearTimeout(timer);}
-    })().catch(e=>{tokenPromise=null;throw e;});
-    return tokenPromise;
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),10000);
+
+    try{
+      const r=await fetch(LIVE_TOKEN_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        signal:controller.signal
+      });
+
+      let d={};
+      try{d=await r.json();}catch(_){}
+
+      if(!r.ok||!d.token){
+        throw new Error(
+          d.error||`Puja Live token request failed (HTTP ${r.status}).`
+        );
+      }
+
+      return d;
+    }catch(e){
+      if(e?.name==="AbortError"){
+        throw new Error("Puja Live token request timed out.");
+      }
+      throw e;
+    }finally{
+      clearTimeout(timer);
+    }
   }
+
   function ensureSocket(){
-    if(socket&&socket.readyState===WebSocket.OPEN&&setupReady)return Promise.resolve();
-    if(connecting)return new Promise((resolve,reject)=>{const start=Date.now();const wait=()=>{if(socket&&socket.readyState===WebSocket.OPEN&&setupReady)return resolve();if(!connecting&&(!socket||socket.readyState===WebSocket.CLOSED))return reject(new Error("Puja Live connection failed."));if(Date.now()-start>15000)return reject(new Error("Puja Live connection timed out."));setTimeout(wait,50);};wait();});
-    connecting=true;setupReady=false;setState(null,"Connecting Puja to Gemini Live…");
+    if(socket&&socket.readyState===WebSocket.OPEN&&setupReady){
+      return Promise.resolve();
+    }
+
+    if(connecting){
+      return new Promise((resolve,reject)=>{
+        const start=Date.now();
+
+        const wait=()=>{
+          if(socket&&socket.readyState===WebSocket.OPEN&&setupReady){
+            return resolve();
+          }
+
+          if(!connecting&&(!socket||socket.readyState===WebSocket.CLOSED)){
+            return reject(new Error("Puja Live connection failed."));
+          }
+
+          if(Date.now()-start>15000){
+            return reject(new Error("Puja Live connection timed out."));
+          }
+
+          setTimeout(wait,50);
+        };
+
+        wait();
+      });
+    }
+
+    connecting=true;
+    setupReady=false;
+    suppressPlayback=false;
+
+    setState(null,"Connecting Puja to Gemini Live…");
+
     return getLiveToken().then(td=>new Promise((resolve,reject)=>{
-      const wsUrl="wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token="+encodeURIComponent(td.token);
-      socket=new WebSocket(wsUrl);
-      const timeout=setTimeout(()=>{try{socket.close();}catch(_){}connecting=false;reject(new Error("Puja Live connection timed out."));},15000);
-      socket.onopen=()=>socket.send(JSON.stringify({setup:{model:MODEL,responseModalities:["AUDIO"],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:VOICE}}},inputAudioTranscription:{},outputAudioTranscription:{},sessionResumption:{}}}));
-      socket.onmessage=async event=>{
-        let m;try{m=JSON.parse(event.data);}catch(_){return;}
-        if(m.setupComplete){clearTimeout(timeout);setupReady=true;connecting=false;setState(null,"Gemini Live · ready");resolve();return;}
-        if(m.setupError){
-          clearTimeout(timeout);connecting=false;setupReady=false;
-          const detail=m.setupError?.message||m.setupError?.status||"Gemini rejected the Puja Live setup.";
-          try{socket.close();}catch(_){}
-          reject(new Error(detail));return;
+      const wsUrl=
+        "wss://generativelanguage.googleapis.com/ws/" +
+        "google.ai.generativelanguage.v1beta." +
+        "GenerativeService.BidiGenerateContentConstrained" +
+        "?access_token="+encodeURIComponent(td.token);
+
+      const ws=new WebSocket(wsUrl);
+      socket=ws;
+
+      let settled=false;
+
+      const fail=(error)=>{
+        clearTimeout(timeout);
+        if(!settled){
+          settled=true;
+          reject(error instanceof Error?error:new Error(String(error)));
         }
-        const s=m.serverContent;if(!s)return;
-        if(s.interrupted){stopPlayback();return;}
-        if(s.interimInputTranscription?.text)setState("listening","Listening…");
-        if(s.inputTranscription?.text){const t=s.inputTranscription.text.trim();if(t){if(!inputRow)inputRow=addMessage(t,"user");else inputRow.textContent=t;inputRow=null;}}
-        if(s.outputTranscription?.text){if(!outputRow)outputRow=addMessage("","bot");outputText+=s.outputTranscription.text;outputRow.textContent=outputText;messages.scrollTop=messages.scrollHeight;}
-        for(const part of(s.modelTurn?.parts||[])){const inline=part?.inlineData||part?.inline_data;if(inline?.data)await playPcm(inline.data);}
-        if(s.turnComplete){if(outputText)addLink(outputText);outputRow=null;outputText="";setState(null,listening?"Listening…":"Gemini Live · ready");}
       };
-      socket.onerror=()=>{clearTimeout(timeout);connecting=false;setupReady=false;setState(null,"Puja Live connection error");};
-      socket.onclose=event=>{
+
+      const timeout=setTimeout(()=>{
+        try{ws.close();}catch(_){}
+        if(socket===ws){
+          connecting=false;
+          setupReady=false;
+        }
+        fail(new Error("Puja Live connection timed out."));
+      },15000);
+
+      ws.onopen=()=>{
+        if(socket!==ws)return;
+
+        ws.send(JSON.stringify({
+          setup:{
+            model:MODEL,
+            generationConfig:{
+              responseModalities:["AUDIO"],
+              speechConfig:{
+                voiceConfig:{
+                  prebuiltVoiceConfig:{
+                    voiceName:VOICE
+                  }
+                }
+              }
+            },
+            inputAudioTranscription:{},
+            outputAudioTranscription:{},
+            sessionResumption:{}
+          }
+        }));
+      };
+
+      ws.onmessage=async event=>{
+        if(socket!==ws)return;
+
+        let m;
+        try{
+          let raw=event.data;
+
+          if(raw instanceof Blob){
+            raw=await raw.text();
+          }else if(raw instanceof ArrayBuffer){
+            raw=new TextDecoder().decode(raw);
+          }
+
+          m=JSON.parse(raw);
+        }catch(e){
+          console.warn("Puja Live: unparsable WebSocket frame",e);
+          return;
+        }
+
+        console.debug("Puja Live message",m);
+
+        if(m.setupComplete){
+          clearTimeout(timeout);
+          setupReady=true;
+          connecting=false;
+          settled=true;
+          setState(null,"Gemini Live · ready");
+          resolve();
+          return;
+        }
+
+        if(m.setupError){
+          clearTimeout(timeout);
+          connecting=false;
+          setupReady=false;
+
+          const detail=
+            m.setupError?.message||
+            m.setupError?.status||
+            "Gemini rejected the Puja Live setup.";
+
+          try{ws.close();}catch(_){}
+
+          fail(new Error(detail));
+          return;
+        }
+
+        const s=m.serverContent;
+        if(!s)return;
+
+        if(s.interrupted){
+          stopPlayback();
+          suppressPlayback=true;
+          outputRow=null;
+          outputText="";
+          return;
+        }
+
+        if(s.interimInputTranscription?.text){
+          setState("listening","Listening…");
+        }
+
+        if(s.inputTranscription?.text){
+          const t=s.inputTranscription.text.trim();
+
+          if(t){
+            if(!inputRow){
+              inputRow=addMessage(t,"user");
+            }else{
+              inputRow.textContent=t;
+            }
+          }
+        }
+
+        if(s.outputTranscription?.text){
+          if(!outputRow){
+            outputRow=addMessage("","bot");
+          }
+
+          outputText+=s.outputTranscription.text;
+          outputRow.textContent=outputText;
+          messages.scrollTop=messages.scrollHeight;
+        }
+
+        if(!suppressPlayback){
+          for(const part of(s.modelTurn?.parts||[])){
+            const inline=part?.inlineData||part?.inline_data;
+
+            if(inline?.data){
+              await playPcm(inline.data);
+            }
+          }
+        }
+
+        if(s.turnComplete){
+          if(outputText)addLink(outputText);
+
+          outputRow=null;
+          outputText="";
+          inputRow=null;
+          suppressPlayback=false;
+
+          setState(
+            null,
+            listening?"Listening…":"Gemini Live · ready"
+          );
+        }
+      };
+
+      ws.onerror=()=>{
+        if(socket!==ws)return;
+
+        clearTimeout(timeout);
+        setupReady=false;
+
+        setState(null,"Puja Live connection error");
+
+        if(!settled){
+          connecting=false;
+        }
+      };
+
+      ws.onclose=event=>{
+        if(socket!==ws)return;
+
         const wasReady=setupReady;
-        clearTimeout(timeout);connecting=false;setupReady=false;
-        if(!wasReady)reject(new Error(`Gemini Live closed the connection (code ${event.code}${event.reason?`: ${event.reason}`:""}).`));
-        if(!closedByUser)setState(null,"Gemini Live · disconnected");
+
+        clearTimeout(timeout);
+        connecting=false;
+        setupReady=false;
+        socket=null;
+
+        if(!wasReady&&!settled){
+          fail(
+            new Error(
+              `Gemini Live closed the connection (code ${event.code}${event.reason?`: ${event.reason}`:""}).`
+            )
+          );
+        }
+
+        if(!closedByUser){
+          setState(null,"Gemini Live · disconnected");
+        }
       };
-    }));
+    })).catch(e=>{
+      connecting=false;
+      setupReady=false;
+      if(socket&&socket.readyState!==WebSocket.OPEN){
+        socket=null;
+      }
+      throw e;
+    });
   }
+
   async function sendTextTurn(text){
     const value=String(text||"").trim();if(!value)return;
-    try{await ensureSocket();await resumeOutput();inputRow=addMessage(value,"user");socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:value}]}],turnComplete:true}}));setState(null,"Puja is thinking…");}
+    try{await ensureSocket();await resumeOutput();addMessage(value,"user");inputRow=null;socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:value}]}],turnComplete:true}}));setState(null,"Puja is thinking…");}
     catch(e){addMessage(e.message||"Puja is temporarily unavailable. Please try again.","bot");setState(null,"Gemini Live · unavailable");}
   }
   function stopTalking(){
+    suppressPlayback=true;
     stopPlayback();
     if(socket&&socket.readyState===WebSocket.OPEN)try{socket.send(JSON.stringify({clientContent:{turnComplete:true}}));}catch(_){}
     setState(null,listening?"Listening…":"Gemini Live · ready");
@@ -144,8 +366,8 @@
     setState(null,"Gemini Live · ready");
   }
   function toggleMicrophone(){if(listening)stopMicrophone();else startMicrophone();}
-  function openPanel(){panel.classList.add("open");panel.setAttribute("aria-hidden","false");launcher.setAttribute("aria-expanded","true");closedByUser=false;ensureSocket().catch(e=>addMessage(e.message||"Puja is temporarily unavailable.","bot"));}
-  function closePanel(){stopMicrophone();stopPlayback();panel.classList.remove("open");panel.setAttribute("aria-hidden","true");launcher.setAttribute("aria-expanded","false");closedByUser=true;if(socket)try{socket.close();}catch(_){}socket=null;setupReady=false;}
+  function openPanel(){panel.classList.add("open");suppressPlayback=false;panel.setAttribute("aria-hidden","false");launcher.setAttribute("aria-expanded","true");closedByUser=false;ensureSocket().catch(e=>addMessage(e.message||"Puja is temporarily unavailable.","bot"));}
+  function closePanel(){stopMicrophone();stopPlayback();panel.classList.remove("open");panel.setAttribute("aria-hidden","true");launcher.setAttribute("aria-expanded","false");closedByUser=true;if(socket)try{socket.close();}catch(_){}socket=null;setupReady=false;connecting=false;suppressPlayback=false;}
   launcher.addEventListener("click",openPanel);close?.addEventListener("click",closePanel);mic?.addEventListener("click",toggleMicrophone);stopBtn?.addEventListener("click",stopTalking);
   form.addEventListener("submit",e=>{e.preventDefault();const t=input.value.trim();input.value="";if(t)sendTextTurn(t);});
   document.querySelectorAll("[data-puja-question]").forEach(b=>b.addEventListener("click",()=>sendTextTurn(b.getAttribute("data-puja-question")||"")));
