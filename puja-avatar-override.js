@@ -1,0 +1,1 @@
+(() => { const img=document.querySelector('#pujaAvatar img, .puja-avatar img'); if(img){img.src='assets/img/puja-avatar-v2.svg?v=20261006'; img.alt='Puja — Sage Harvest virtual agent';} const style=document.createElement('link'); style.rel='stylesheet'; style.href='assets/img/puja-avatar-v2.css?v=20261006'; document.head.appendChild(style); })();
