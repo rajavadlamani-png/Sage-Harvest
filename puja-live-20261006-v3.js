@@ -73,8 +73,9 @@
       try{d=await r.json();}catch(_){}
 
       if(!r.ok||!d.token){
+        const detail = d?.googleError?.message ? ` ${d.googleError.message}` : "";
         throw new Error(
-          d.error||`Puja Live token request failed (HTTP ${r.status}).`
+          (d.error||`Puja Live token request failed (HTTP ${r.status}).`) + detail
         );
       }
 
