@@ -1,0 +1,54 @@
+name: Refresh YouTube Feed
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build feed
+        shell: python
+        run: |
+          import json, re, urllib.request, xml.etree.ElementTree as ET
+          from datetime import datetime, timezone
+
+          channel_url = 'https://www.youtube.com/@rajavadlamani'
+          req = urllib.request.Request(channel_url, headers={'User-Agent': 'Mozilla/5.0'})
+          html = urllib.request.urlopen(req, timeout=30).read().decode('utf-8', 'ignore')
+          match = re.search(r'"externalId":"([^"]+)"', html)
+          if not match:
+              match = re.search(r'"channelId":"([^"]+)"', html)
+          if not match:
+              raise SystemExit('Could not resolve YouTube channel ID')
+          channel_id = match.group(1)
+
+          rss_url = f'https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}'
+          rss = urllib.request.urlopen(urllib.request.Request(rss_url, headers={'User-Agent': 'Mozilla/5.0'}), timeout=30).read()
+          root = ET.fromstring(rss)
+          ns = {'atom':'http://www.w3.org/2005/Atom','yt':'http://www.youtube.com/xml/schemas/2015'}
+          items=[]
+          for entry in root.findall('atom:entry', ns)[:8]:
+              title=entry.findtext('atom:title','',ns)
+              video_id=entry.findtext('yt:videoId','',ns)
+              published=entry.findtext('atom:published','',ns)
+              if video_id:
+                  items.append({'title':title,'published':published[:10] if published else '','url':f'https://www.youtube.com/watch?v={video_id}'})
+
+          with open('data/youtube.json','w',encoding='utf-8') as f:
+              json.dump(items,f,ensure_ascii=False,indent=2)
+      - name: Commit updated feed
+        run: |
+          git config user.name 'Sage Harvest Feed Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add data/youtube.json
+          git diff --cached --quiet || git commit -m 'Refresh YouTube media feed'
+          git push
