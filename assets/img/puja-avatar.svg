@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Puja virtual agent portrait">
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="25%" r="85%"><stop offset="0" stop-color="#f7f2e8"/><stop offset="1" stop-color="#d9c9a7"/></radialGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1c4a1"/><stop offset="1" stop-color="#c98567"/></linearGradient>
+    <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#392a27"/><stop offset="1" stop-color="#171313"/></linearGradient>
+    <linearGradient id="jacket" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#294f62"/><stop offset="1" stop-color="#132f3d"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="7" stdDeviation="7" flood-opacity=".18"/></filter>
+  </defs>
+  <circle cx="120" cy="120" r="116" fill="url(#bg)"/>
+  <path d="M54 225c8-47 31-70 66-70s58 23 66 70z" fill="url(#jacket)" filter="url(#shadow)"/>
+  <path d="M99 164l21 31 21-31-21-16z" fill="#f5f0e6"/>
+  <path d="M76 92c0-49 24-72 47-72 37 0 54 29 45 79-4 24-16 49-48 49-29 0-44-25-44-56z" fill="url(#hair)"/>
+  <ellipse cx="120" cy="112" rx="38" ry="48" fill="url(#skin)"/>
+  <path d="M82 100c2-32 14-53 39-55 28-2 45 16 46 48-13-11-23-23-31-38-12 20-30 34-54 45z" fill="url(#hair)"/>
+  <path d="M92 110c7-5 14-5 20-1" fill="none" stroke="#4b3028" stroke-width="3" stroke-linecap="round"/>
+  <path d="M128 109c7-4 14-4 20 1" fill="none" stroke="#4b3028" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="105" cy="111" r="2.4" fill="#2b201d"/><circle cx="143" cy="111" r="2.4" fill="#2b201d"/>
+  <path d="M118 114c-2 7-3 11 1 13" fill="none" stroke="#a76852" stroke-width="2" stroke-linecap="round"/>
+  <path d="M108 134c7 6 17 6 24 0" fill="none" stroke="#783f3c" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="86" cy="127" r="3" fill="#d7a24b"/><circle cx="154" cy="127" r="3" fill="#d7a24b"/>
+  <path d="M93 158c8 8 18 12 27 12s20-4 28-12" fill="none" stroke="#c79e62" stroke-width="2" opacity=".7"/>
+</svg>
