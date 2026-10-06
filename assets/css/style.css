@@ -84,3 +84,8 @@
 /* Header logo sizing overrides the site's general full-width image rule */
 .site-header .brand img.brand-logo{display:block;width:190px;height:54px;max-width:min(42vw,190px);max-height:54px;object-fit:contain;border-radius:0;box-shadow:none}
 @media(max-width:900px){.site-header .brand img.brand-logo{width:160px;height:48px;max-width:42vw;max-height:48px}}
+
+/* Future launch notice: clear availability date across public pages */
+.launch-notice{margin:0;padding:12px 20px;text-align:center;background:#f3f0e5;color:#25432f;border-bottom:1px solid rgba(37,67,47,.18);font-size:.94rem;line-height:1.5}
+.launch-notice strong{font-weight:800}
+@media(max-width:700px){.launch-notice{padding:11px 14px;font-size:.86rem}}
