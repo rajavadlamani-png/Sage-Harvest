@@ -21,7 +21,7 @@
 .system-card b{color:var(--gold)}
 .visual-section{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:5vw;align-items:center;background:#f4f0e6}
 .visual-section h2{font-size:clamp(36px,5vw,64px);line-height:1.04;letter-spacing:-2px;margin:0 0 22px}
-.visual-section>img{display:block;width:100%;height:auto;border-radius:18px;box-shadow:0 16px 44px rgba(18,59,43,.10)}
+.visual-section>img,.visual-section>.seed-chain-inline{display:block;width:100%;height:auto;border-radius:18px;box-shadow:0 16px 44px rgba(18,59,43,.10)}
 .pillars article{transition:transform .2s,box-shadow .2s,border-color .2s}
 .pillars>article{border:1px solid rgba(18,59,43,.08)}
 .pillars>article:hover{position:relative;transform:translateY(-3px);box-shadow:0 14px 32px rgba(18,59,43,.08);border-color:rgba(201,167,90,.7)}
