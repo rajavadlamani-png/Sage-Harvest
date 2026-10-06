@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 180" role="img" aria-labelledby="title desc">
+<title id="title">Sage Harvest</title><desc id="desc">Sage Harvest wordmark with an olive-green leaf motif.</desc>
+<g fill="#92985b" font-family="Trebuchet MS, Arial, sans-serif" font-weight="700" letter-spacing="-5">
+<text x="18" y="76" font-size="91">Sage</text><text x="62" y="158" font-size="91">Harvest</text></g>
+<g fill="#92985b">
+<path d="M294 128 C300 93 310 55 345 20 C332 49 329 75 320 98 C344 65 375 52 412 54 C390 77 362 92 326 104 C360 98 391 107 415 126 C379 135 348 127 319 111 C312 122 306 137 303 151 Z"/>
+<path d="M335 54 C345 25 369 8 400 7 C385 31 362 46 335 54 Z"/>
+</g>
+<g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M337 48 Q359 27 389 13"/><path d="M331 99 Q359 78 397 62"/><path d="M324 111 Q357 116 391 127"/></g>
+</svg>
