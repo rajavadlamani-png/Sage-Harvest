@@ -7,5 +7,5 @@
 .founder-spotlight{display:grid;grid-template-columns:minmax(170px,230px) minmax(0,1fr);gap:5vw;align-items:center}
 .founder-spotlight .founder-portrait{max-width:230px}
 .founder-home-portrait{max-width:280px}
-@media(max-width:900px){.founder-intro{grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:28px}.founder-intro .intro-text{grid-column:2}.founder-spotlight{grid-template-columns:minmax(0,200px) minmax(0,1fr)}}
+@media(max-width:900px){.founder-intro{grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:28px}.founder-intro .intro-text{grid-column:1/-1}.founder-spotlight{grid-template-columns:minmax(0,200px) minmax(0,1fr)}}
 @media(max-width:600px){.founder-intro,.founder-spotlight{grid-template-columns:1fr;gap:24px}.founder-intro .intro-text{grid-column:auto}.founder-intro .founder-portrait,.founder-spotlight .founder-portrait{width:100%;max-width:240px}.founder-strip .founder-portrait{height:auto;max-width:280px;aspect-ratio:1/1}}
