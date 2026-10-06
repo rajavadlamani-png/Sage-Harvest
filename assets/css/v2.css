@@ -27,5 +27,7 @@
 
 /* Trust & Governance footer grouping */
 .footer-columns{display:flex;gap:42px;align-items:flex-start}.footer-column{display:flex;flex-direction:column;gap:7px;min-width:145px}.footer-column>strong{font-size:11px;letter-spacing:1.4px;color:#fff;margin-bottom:5px}.footer-column a{color:#dce5dc;text-decoration:none;font-size:13px}.footer-column a:hover{text-decoration:underline}@media(max-width:900px){.footer-columns{flex-wrap:wrap;gap:28px}.footer-column{min-width:130px}}@media(max-width:600px){.footer-columns{display:grid;grid-template-columns:1fr 1fr;gap:28px}.footer-column{min-width:0}}
-
-
+/* Trust & Governance pages — tighter document rhythm */
+body.trust-page .page-hero{padding-bottom:3vw}
+body.trust-page .page-hero + .section{padding-top:3vw}
+@media(max-width:900px){body.trust-page .page-hero{padding-bottom:5vw}body.trust-page .page-hero + .section{padding-top:5vw}}
