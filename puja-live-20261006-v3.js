@@ -14,6 +14,7 @@
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0;
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
   let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
+  let audioChunksThisTurn=0;
 
   function setState(state,label){
     avatar?.classList.remove("speaking","listening"); mini?.classList.remove("speaking","listening");
@@ -228,6 +229,7 @@
         if(!s)return;
 
         if(s.interrupted){
+          audioChunksThisTurn=0;
           stopPlayback();
           suppressPlayback=true;
           outputRow=null;
@@ -266,18 +268,23 @@
             const inline=part?.inlineData||part?.inline_data;
 
             if(inline?.data){
+              audioChunksThisTurn++;
               await playPcm(inline.data);
             }
           }
         }
 
         if(s.turnComplete){
+          if(outputText && audioChunksThisTurn===0){
+            console.warn("Puja Live: turn completed with transcription but no audio chunks received.");
+          }
           if(outputText)addLink(outputText);
 
           outputRow=null;
           outputText="";
           inputRow=null;
           suppressPlayback=false;
+          audioChunksThisTurn=0;
 
           setState(
             null,
