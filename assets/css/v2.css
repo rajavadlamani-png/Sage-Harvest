@@ -137,3 +137,16 @@ footer .copyright{align-self:end}
  .hero-copy,.hero-seed,.system-card,.hero:after,.hero-visual:before,.hero-visual:after,.flow-svg .flow-link,.flow-svg .pulse{animation:none!important}
  .visual-section>img,main>.pillars.section article,.statement .button.light{transition:none}
 }
+
+
+/* Connected seed-system diagram: subtle flow motion, independent of Puja */
+.seed-chain-inline>g[fill="none"][stroke="#c9a75a"] path{
+  stroke-dasharray:7 9;
+  animation:sh-chain-flow 24s linear infinite;
+}
+@keyframes sh-chain-flow{
+  to{stroke-dashoffset:-320}
+}
+@media(prefers-reduced-motion:reduce){
+  .seed-chain-inline>g[fill="none"][stroke="#c9a75a"] path{animation:none}
+}
