@@ -23,3 +23,7 @@
 @media(max-width:600px){.dynamic-feed-grid{grid-template-columns:1fr}.puja-widget{right:12px;bottom:12px}.puja-panel{right:0;bottom:64px;width:calc(100vw - 24px);height:min(620px,calc(100vh - 90px));border-radius:16px}.puja-launcher-label{display:none}.puja-video-section{padding:55px 18px}}
 
 /* Pages deployment refresh marker: 2026-10-06 */
+
+
+/* Trust & Governance footer grouping */
+.footer-columns{display:flex;gap:42px;align-items:flex-start}.footer-column{display:flex;flex-direction:column;gap:7px;min-width:145px}.footer-column>strong{font-size:11px;letter-spacing:1.4px;color:#fff;margin-bottom:5px}.footer-column a{color:#dce5dc;text-decoration:none;font-size:13px}.footer-column a:hover{text-decoration:underline}@media(max-width:900px){.footer-columns{flex-wrap:wrap;gap:28px}.footer-column{min-width:130px}}@media(max-width:600px){.footer-columns{display:grid;grid-template-columns:1fr 1fr;gap:28px}.footer-column{min-width:0}}
