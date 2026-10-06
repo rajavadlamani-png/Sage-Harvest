@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sageharvest.pages.dev/sitemap.xml
+Sitemap: https://rajavadlamani-png.github.io/Sage-Harvest/sitemap.xml
