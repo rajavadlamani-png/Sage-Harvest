@@ -2,24 +2,39 @@
 <title id="title">Seed and connected field system</title>
 <desc id="desc">An editorial illustration of a seed, with subtle field contours and data points suggesting the connection between agriculture and decision-making.</desc>
 <defs>
+ <style>
+  .field-lines{stroke-dasharray:5 9;animation:field-flow 26s linear infinite}
+  .orbit-rings{transform-box:fill-box;transform-origin:center;animation:orbit-breathe 8s ease-in-out infinite}
+  .seed-motion{transform-box:fill-box;transform-origin:center;animation:seed-float 6s ease-in-out infinite}
+  .signal-dot{transform-box:fill-box;transform-origin:center;animation:signal-pulse 3.2s ease-in-out infinite}
+  .signal-dot:nth-of-type(2){animation-delay:1s}
+  .signal-dot:nth-of-type(3){animation-delay:2s}
+  .signal-line{stroke-dasharray:4 7;animation:signal-flow 12s linear infinite}
+  @keyframes field-flow{to{stroke-dashoffset:-140}}
+  @keyframes orbit-breathe{0%,100%{opacity:.65;transform:scale(.985)}50%{opacity:1;transform:scale(1.02)}}
+  @keyframes seed-float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-5px) rotate(1deg)}}
+  @keyframes signal-pulse{0%,100%{opacity:.65;transform:scale(1)}50%{opacity:1;transform:scale(1.35)}}
+  @keyframes signal-flow{to{stroke-dashoffset:-88}}
+  @media(prefers-reduced-motion:reduce){.field-lines,.orbit-rings,.seed-motion,.signal-dot,.signal-line{animation:none!important}}
+ </style>
  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f3f3eb"/><stop offset="1" stop-color="#e4eadf"/></linearGradient>
  <linearGradient id="seed" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ead69b"/><stop offset=".58" stop-color="#c9a75a"/><stop offset="1" stop-color="#a88946"/></linearGradient>
  <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#123b2b" flood-opacity=".18"/></filter>
 </defs>
 <rect width="600" height="400" rx="28" fill="url(#bg)"/>
-<g fill="none" stroke="#a9b9a4" stroke-width="1.4" opacity=".55">
+<g class="field-lines" fill="none" stroke="#a9b9a4" stroke-width="1.4" opacity=".55">
  <path d="M-20 300C100 230 150 360 280 285S470 230 620 285"/>
  <path d="M-20 325C100 255 150 385 280 310S470 255 620 310"/>
  <path d="M-20 350C100 280 150 410 280 335S470 280 620 335"/>
- <circle cx="300" cy="195" r="150"/><circle cx="300" cy="195" r="122"/><circle cx="300" cy="195" r="95"/>
+ <g class="orbit-rings"><circle cx="300" cy="195" r="150"/><circle cx="300" cy="195" r="122"/><circle cx="300" cy="195" r="95"/></g>
 </g>
-<g stroke="#8fa68e" stroke-width="1.5" fill="none" opacity=".8"><path d="M80 85H195L228 118"/><path d="M410 88H500V140"/><path d="M390 300H500V330"/></g>
-<g fill="#123b2b"><circle cx="80" cy="85" r="5"/><circle cx="500" cy="140" r="5"/><circle cx="500" cy="330" r="5"/></g>
-<g filter="url(#shadow)" transform="translate(300 194) rotate(-24)">
+<g class="signal-line" stroke="#8fa68e" stroke-width="1.5" fill="none" opacity=".8"><path d="M80 85H195L228 118"/><path d="M410 88H500V140"/><path d="M390 300H500V330"/></g>
+<g fill="#123b2b"><circle class="signal-dot" cx="80" cy="85" r="5"/><circle class="signal-dot" cx="500" cy="140" r="5"/><circle class="signal-dot" cx="500" cy="330" r="5"/></g>
+<g class="seed-motion"><g filter="url(#shadow)" transform="translate(300 194) rotate(-24)">
  <path d="M0-140C65-110 112-42 101 36C91 103 42 143 0 151C-44 132-91 87-101 23C-112-48-64-111 0-140Z" fill="url(#seed)" stroke="#a88946" stroke-width="2"/>
  <path d="M0-129C25-65 29 50 0 139" fill="none" stroke="#f6e8ba" stroke-width="5" stroke-linecap="round" opacity=".85"/>
  <path d="M-1-90C-23-40-25 36-2 85" fill="none" stroke="#987c3e" stroke-width="2" opacity=".45"/>
-</g>
+</g></g>
 <g font-family="Arial,sans-serif" fill="#607066">
  <text x="62" y="65" font-size="10" font-weight="700" letter-spacing="2">ORIGIN</text>
  <text x="426" y="70" font-size="10" font-weight="700" letter-spacing="2">INTELLIGENCE</text>
