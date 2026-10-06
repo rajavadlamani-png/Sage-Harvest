@@ -44,3 +44,32 @@
 .founder-strip .intro-text{max-width:760px}
 @media(max-width:900px){.hero{min-height:auto}.visual-section{grid-template-columns:1fr;gap:28px}.founder-page-hero{grid-template-columns:minmax(0,1fr) minmax(210px,280px);gap:28px}.founder-page-hero .founder-portrait{max-width:280px}.service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.hero{padding-top:58px;padding-bottom:58px}.hero h1{letter-spacing:-2.8px}.hero-visual{min-height:0}.hero-visual .hero-seed{max-height:none}.system-card{margin-top:-10px;padding:13px 10px;font-size:8px;letter-spacing:.6px}.visual-section{padding-top:58px;padding-bottom:58px}.service-grid{grid-template-columns:1fr;gap:12px}.service-grid article{padding:30px 24px;min-height:0}.service-grid h2{margin-top:20px}.founder-page-hero{grid-template-columns:1fr;padding-top:58px}.founder-page-hero .founder-portrait{width:min(100%,280px);max-width:280px;grid-row:1}.founder-page-hero>div{grid-row:2}.founder-intro{padding-top:36px}.founder-strip{gap:28px}}
+
+/* Interactive field-to-market visual system */
+.flow-experience{padding:clamp(28px,5vw,64px);background:linear-gradient(135deg,#123b2b 0%,#1d4b37 70%,#234f3b 100%);color:#fbfaf6;border-radius:24px;overflow:hidden;position:relative}
+.flow-experience:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 15%,rgba(201,167,90,.16),transparent 34%);pointer-events:none}
+.flow-heading,.flow-canvas,.flow-controls{position:relative;z-index:1}
+.flow-heading{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:26px}
+.flow-heading h2{max-width:620px;margin:0;color:#fff}
+.flow-heading p{max-width:340px;color:#dce5dc;margin:0;font-size:14px}
+.flow-canvas{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:12px;overflow:hidden}
+.flow-svg{display:block;width:100%;height:auto;min-height:220px}
+.flow-svg .flow-link{fill:none;stroke:#9db9a2;stroke-width:2;stroke-dasharray:6 8;animation:flow-dash 18s linear infinite}
+.flow-svg .flow-node{cursor:pointer;outline:none}
+.flow-svg .flow-node rect{fill:#fbfaf6;stroke:#d7e2d5;stroke-width:1.5;transition:fill .2s,stroke .2s,transform .2s}
+.flow-svg .flow-node text{fill:#173b2c;font-family:inherit;font-size:13px;font-weight:700;pointer-events:none}
+.flow-svg .flow-node .sub{font-size:10px;font-weight:500;fill:#607066}
+.flow-svg .flow-node:hover rect,.flow-svg .flow-node:focus rect,.flow-svg .flow-node[aria-pressed=true] rect{fill:#f3e7c9;stroke:#c9a75a;stroke-width:2.5}
+.flow-svg .pulse{fill:#c9a75a;opacity:.9;transform-box:fill-box;transform-origin:center;animation:flow-pulse 2.8s ease-in-out infinite}
+.flow-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.flow-step{border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;padding:10px 15px;border-radius:999px;font:inherit;font-size:13px;cursor:pointer;transition:background .2s,border-color .2s}
+.flow-step:hover,.flow-step:focus-visible,.flow-step[aria-pressed=true]{background:#c9a75a;color:#17231d;border-color:#c9a75a}
+.flow-detail{margin-top:16px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;padding:16px 18px;background:rgba(255,255,255,.08);border-radius:12px;border:1px solid rgba(255,255,255,.1)}
+.flow-detail .flow-index{font-size:12px;letter-spacing:1.5px;color:#e4c980;font-weight:800}
+.flow-detail h3{margin:0 0 4px;color:#fff;font-size:17px}
+.flow-detail p{margin:0;color:#dce5dc;font-size:14px}
+.flow-caption{color:#dce5dc;font-size:12px;margin:12px 2px 0}
+@keyframes flow-dash{to{stroke-dashoffset:-280}}
+@keyframes flow-pulse{0%,100%{opacity:.5;transform:scale(.85)}50%{opacity:1;transform:scale(1.2)}}
+@media(max-width:700px){.flow-heading{display:block}.flow-heading p{margin-top:12px}.flow-canvas{padding:5px}.flow-svg{min-height:0}.flow-svg .flow-node text{font-size:15px}.flow-svg .flow-node .sub{display:none}.flow-detail{grid-template-columns:1fr;gap:5px}.flow-controls{gap:7px}.flow-step{padding:9px 12px}}
+@media(prefers-reduced-motion:reduce){.flow-svg .flow-link,.flow-svg .pulse{animation:none}html{scroll-behavior:auto}}
