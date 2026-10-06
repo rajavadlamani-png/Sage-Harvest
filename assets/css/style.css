@@ -75,3 +75,8 @@
 @media(prefers-reduced-motion:reduce){.flow-svg .flow-link,.flow-svg .pulse{animation:none}html{scroll-behavior:auto}}
 
 @media(max-width:700px){.flow-canvas{overflow-x:auto}.flow-svg{min-width:760px}}
+
+
+/* Sage Harvest brand wordmark — responsive logo, no impact on navigation behaviour */
+.brand-logo{display:block;width:clamp(150px,17vw,205px);height:auto;max-height:54px;object-fit:contain}
+@media(max-width:900px){.brand-logo{width:clamp(138px,35vw,178px);max-height:48px}}
