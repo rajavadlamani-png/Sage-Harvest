@@ -1,1 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520"><defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#d9e4d5"/><stop offset="1" stop-color="#6f8f78"/></linearGradient></defs><rect width="900" height="520" fill="#eef0e7" rx="30"/><circle cx="450" cy="260" r="180" fill="url(#g)"/><g fill="#123b2b" font-family="Arial, sans-serif" font-weight="700" text-anchor="middle"><text x="450" y="225" font-size="26">SEED SUPPLY CHAIN</text><text x="450" y="260" font-size="15" opacity=".8">FIELD → DATA → DECISION → OUTCOME</text></g><g fill="#fff" stroke="#d9e0d7"><rect x="60" y="70" width="190" height="72" rx="12"/><rect x="650" y="70" width="190" height="72" rx="12"/><rect x="60" y="378" width="190" height="72" rx="12"/><rect x="650" y="378" width="190" height="72" rx="12"/></g><g fill="#17231d" font-family="Arial, sans-serif" text-anchor="middle"><text x="155" y="112" font-size="15">PRODUCTION</text><text x="745" y="112" font-size="15">PROCESSING</text><text x="155" y="420" font-size="15">STORAGE</text><text x="745" y="420" font-size="15">MARKET</text></g><g stroke="#c9a75a" stroke-width="3" fill="none"><path d="M250 106H350"/><path d="M550 106H650"/><path d="M650 414H550"/><path d="M350 414H250"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+<title id="title">The connected seed supply chain</title>
+<desc id="desc">A connected system linking field production, processing, storage, distribution and market, supported by data, quality and operational decisions.</desc>
+<defs>
+  <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fbfaf6"/><stop offset="1" stop-color="#edf1e9"/></linearGradient>
+  <linearGradient id="core" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#174833"/><stop offset="1" stop-color="#315d43"/></linearGradient>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#123b2b" flood-opacity=".10"/></filter>
+  <marker id="arrow" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="#c9a75a"/></marker>
+</defs>
+<rect width="1200" height="680" rx="30" fill="url(#canvas)"/>
+<g opacity=".32" stroke="#d5ddd2" stroke-width="1"><path d="M60 100H1140M60 580H1140M100 50V630M1100 50V630"/></g>
+<text x="76" y="76" font-family="Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="3" fill="#607066">THE CONNECTED SEED SYSTEM</text>
+<text x="76" y="112" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="#17231d">Value is created across the network.</text>
+<g fill="none" stroke="#c9a75a" stroke-width="3" marker-end="url(#arrow)">
+  <path d="M260 245H360"/><path d="M520 245H620"/><path d="M780 245H880"/>
+  <path d="M960 292V395"/><path d="M880 445H780"/><path d="M620 445H520"/><path d="M360 445H260"/>
+</g>
+<g filter="url(#shadow)">
+  <rect x="100" y="190" width="160" height="110" rx="16" fill="#fff" stroke="#dce1da"/>
+  <rect x="360" y="190" width="160" height="110" rx="16" fill="#fff" stroke="#dce1da"/>
+  <rect x="620" y="190" width="160" height="110" rx="16" fill="#fff" stroke="#dce1da"/>
+  <rect x="880" y="190" width="160" height="110" rx="16" fill="#fff" stroke="#dce1da"/>
+  <rect x="880" y="395" width="160" height="100" rx="16" fill="#fff" stroke="#dce1da"/>
+  <rect x="620" y="395" width="160" height="100" rx="16" fill="#fff" stroke="#dce1da"/>
+  <rect x="360" y="395" width="160" height="100" rx="16" fill="#fff" stroke="#dce1da"/>
+  <rect x="100" y="395" width="160" height="100" rx="16" fill="#fff" stroke="#dce1da"/>
+</g>
+<g font-family="Arial,sans-serif" text-anchor="middle" fill="#17231d">
+  <g fill="#c9a75a"><circle cx="180" cy="220" r="7"/><circle cx="440" cy="220" r="7"/><circle cx="700" cy="220" r="7"/><circle cx="960" cy="220" r="7"/><circle cx="960" cy="425" r="7"/><circle cx="700" cy="425" r="7"/><circle cx="440" cy="425" r="7"/><circle cx="180" cy="425" r="7"/></g>
+  <text x="180" y="253" font-size="16" font-weight="700">FIELD</text><text x="180" y="276" font-size="12" fill="#607066">Production</text>
+  <text x="440" y="253" font-size="16" font-weight="700">PROCESS</text><text x="440" y="276" font-size="12" fill="#607066">Quality & recovery</text>
+  <text x="700" y="253" font-size="16" font-weight="700">STORE</text><text x="700" y="276" font-size="12" fill="#607066">Inventory & protection</text>
+  <text x="960" y="253" font-size="16" font-weight="700">DISTRIBUTE</text><text x="960" y="276" font-size="12" fill="#607066">Availability & service</text>
+  <text x="960" y="459" font-size="16" font-weight="700">MARKET</text><text x="960" y="480" font-size="12" fill="#607066">Demand & feedback</text>
+  <text x="700" y="459" font-size="16" font-weight="700">PLAN</text><text x="700" y="480" font-size="12" fill="#607066">Supply & capacity</text>
+  <text x="440" y="459" font-size="16" font-weight="700">ASSURE</text><text x="440" y="480" font-size="12" fill="#607066">Traceability & risk</text>
+  <text x="180" y="459" font-size="16" font-weight="700">SOURCE</text><text x="180" y="480" font-size="12" fill="#607066">Parent seed & inputs</text>
+</g>
+<path d="M180 300V340H960V395" fill="none" stroke="#9eb29b" stroke-width="2" stroke-dasharray="6 7" opacity=".8"/>
+<rect x="280" y="545" width="640" height="78" rx="18" fill="url(#core)"/>
+<text x="600" y="576" font-family="Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="2" fill="#dce8d7" text-anchor="middle">THE ADVISORY LENS</text>
+<text x="600" y="602" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#fff" text-anchor="middle">Data • Decisions • Resilience • Performance</text>
+</svg>
