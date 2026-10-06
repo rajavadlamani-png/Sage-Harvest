@@ -73,3 +73,5 @@
 @keyframes flow-pulse{0%,100%{opacity:.5;transform:scale(.85)}50%{opacity:1;transform:scale(1.2)}}
 @media(max-width:700px){.flow-heading{display:block}.flow-heading p{margin-top:12px}.flow-canvas{padding:5px}.flow-svg{min-height:0}.flow-svg .flow-node text{font-size:15px}.flow-svg .flow-node .sub{display:none}.flow-detail{grid-template-columns:1fr;gap:5px}.flow-controls{gap:7px}.flow-step{padding:9px 12px}}
 @media(prefers-reduced-motion:reduce){.flow-svg .flow-link,.flow-svg .pulse{animation:none}html{scroll-behavior:auto}}
+
+@media(max-width:700px){.flow-canvas{overflow-x:auto}.flow-svg{min-width:760px}}
