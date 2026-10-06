@@ -198,3 +198,9 @@ footer .copyright{align-self:end}
   }
   .nav-toggle{border-color:rgba(18,59,43,.18)}
 }
+
+
+/* Sage Harvest branded homepage banner */
+.hero-banner{width:100%;margin:0;padding:0;background:#fbfaf6;line-height:0;overflow:hidden}
+.hero-banner img{display:block;width:100%;height:auto;max-width:none;object-fit:contain}
+@media(max-width:600px){.hero-banner img{width:100%;height:auto}}
