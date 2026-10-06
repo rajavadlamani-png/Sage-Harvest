@@ -43,8 +43,39 @@
   }
   function b64bytes(b64){const bin=atob(b64),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return bytes;}
   async function resumeOutput(){
-    if(!outputContext||outputContext.state==="closed")outputContext=new(window.AudioContext||window.webkitAudioContext)({sampleRate:OUTPUT_RATE});
+    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContextClass)throw new Error("Audio playback is not supported by this browser.");
+    if(!outputContext||outputContext.state==="closed")outputContext=new AudioContextClass();
     if(outputContext.state==="suspended")await outputContext.resume();
+  }
+  function primeAudio(){
+    try{
+      const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+      if(!AudioContextClass)return;
+      if(!outputContext||outputContext.state==="closed")outputContext=new AudioContextClass();
+      if(outputContext.state==="suspended")outputContext.resume().catch(()=>{});
+    }catch(e){console.warn("Puja audio could not be primed",e);}
+  }
+  function speakFallback(text){
+    if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window))return;
+    try{
+      window.speechSynthesis.cancel();
+      const utterance=new SpeechSynthesisUtterance(text);
+      utterance.rate=1;utterance.pitch=1;utterance.volume=1;
+      utterance.onstart=()=>setState("speaking","Puja is speaking");
+      utterance.onend=()=>setState(null,"Text voice mode · ready");
+      utterance.onerror=()=>setState(null,"Text mode · ready");
+      window.speechSynthesis.speak(utterance);
+    }catch(e){console.warn("Puja browser speech fallback failed",e);}
+  }
+  async function sendFallbackText(value){
+    const response=await fetch("https://sageharvest-puja.raja-vadlamani.workers.dev/",{
+      method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:value})
+    });
+    const data=await response.json();
+    if(!response.ok||!data.answer)throw new Error(data.error||"Puja could not answer right now. Please try again.");
+    addMessage(data.answer,"bot");addLink(data.answer);speakFallback(data.answer);
+    setState(null,"Text voice mode · ready");
   }
   async function playPcm(b64){
     if(!b64)return;await resumeOutput();
@@ -341,8 +372,17 @@
 
   async function sendTextTurn(text){
     const value=String(text||"").trim();if(!value)return;
-    try{await ensureSocket();await resumeOutput();addMessage(value,"user");inputRow=null;socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:value}]}],turnComplete:true}}));setState(null,"Puja is thinking…");}
-    catch(e){addMessage(e.message||"Puja is temporarily unavailable. Please try again.","bot");setState(null,"Gemini Live · unavailable");}
+    addMessage(value,"user");
+    try{
+      await ensureSocket();await resumeOutput();inputRow=null;
+      socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:value}]}],turnComplete:true}}));
+      setState(null,"Puja is thinking…");
+    }catch(e){
+      console.warn("Puja Live unavailable; trying compatible text mode",e);
+      setState(null,"Switching to compatible voice mode…");
+      try{await sendFallbackText(value);}
+      catch(fallbackError){addMessage(fallbackError.message||"Puja is temporarily unavailable. Please try again.","bot");setState(null,"Puja · unavailable");}
+    }
   }
   function stopTalking(){
     suppressPlayback=true;
@@ -374,8 +414,8 @@
     if(microphoneStream){for(const t of microphoneStream.getTracks())t.stop();microphoneStream=null;}
     setState(null,"Gemini Live · ready");
   }
-  function toggleMicrophone(){if(listening)stopMicrophone();else startMicrophone();}
-  function openPanel(){panel.classList.add("open");suppressPlayback=false;panel.setAttribute("aria-hidden","false");launcher.setAttribute("aria-expanded","true");closedByUser=false;ensureSocket().catch(e=>addMessage(e.message||"Puja is temporarily unavailable.","bot"));}
+  function toggleMicrophone(){primeAudio();if(listening)stopMicrophone();else startMicrophone();}
+  function openPanel(){primeAudio();panel.classList.add("open");suppressPlayback=false;panel.setAttribute("aria-hidden","false");launcher.setAttribute("aria-expanded","true");closedByUser=false;ensureSocket().catch(e=>{console.warn("Puja Live connection unavailable",e);setState(null,"Compatible voice mode available");});}
   function closePanel(){stopMicrophone();stopPlayback();panel.classList.remove("open");panel.setAttribute("aria-hidden","true");launcher.setAttribute("aria-expanded","false");closedByUser=true;if(socket)try{socket.close();}catch(_){}socket=null;setupReady=false;connecting=false;suppressPlayback=false;}
   launcher.addEventListener("click",openPanel);close?.addEventListener("click",closePanel);mic?.addEventListener("click",toggleMicrophone);stopBtn?.addEventListener("click",stopTalking);
   form.addEventListener("submit",e=>{e.preventDefault();const t=input.value.trim();input.value="";if(t)sendTextTurn(t);});
