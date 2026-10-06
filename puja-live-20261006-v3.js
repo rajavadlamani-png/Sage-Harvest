@@ -48,48 +48,6 @@
     if(!outputContext||outputContext.state==="closed")outputContext=new AudioContextClass();
     if(outputContext.state==="suspended")await outputContext.resume();
   }
-  function primeAudio(){
-    try{
-      const AudioContextClass=window.AudioContext||window.webkitAudioContext;
-      if(!AudioContextClass)return;
-      if(!outputContext||outputContext.state==="closed")outputContext=new AudioContextClass();
-      if(outputContext.state==="suspended")outputContext.resume().catch(()=>{});
-    }catch(e){console.warn("Puja audio could not be primed",e);}
-  }
-  function speakFallback(text){
-    if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window))return;
-    try{
-      window.speechSynthesis.cancel();
-      const utterance=new SpeechSynthesisUtterance(text);
-      utterance.rate=1;utterance.pitch=1;utterance.volume=1;
-      utterance.onstart=()=>setState("speaking","Puja is speaking");
-      utterance.onend=()=>setState(null,"Text voice mode · ready");
-      utterance.onerror=()=>setState(null,"Text mode · ready");
-      window.speechSynthesis.speak(utterance);
-    }catch(e){console.warn("Puja browser speech fallback failed",e);}
-  }
-  async function sendFallbackText(value){
-    const response=await fetch("https://sageharvest-puja.raja-vadlamani.workers.dev/",{
-      method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:value})
-    });
-    const data=await response.json();
-    if(!response.ok||!data.answer)throw new Error(data.error||"Puja could not answer right now. Please try again.");
-    addMessage(data.answer,"bot");addLink(data.answer);speakFallback(data.answer);
-    setState(null,"Text voice mode · ready");
-  }
-  async function playPcm(b64){
-    if(!b64)return;await resumeOutput();
-    const bytes=b64bytes(b64),pcm=new Int16Array(bytes.buffer,bytes.byteOffset,Math.floor(bytes.byteLength/2));
-    const buffer=outputContext.createBuffer(1,pcm.length,OUTPUT_RATE),channel=buffer.getChannelData(0);
-    for(let i=0;i<pcm.length;i++)channel[i]=pcm[i]/32768;
-    const source=outputContext.createBufferSource();source.buffer=buffer;source.connect(outputContext.destination);
-    nextPlayTime=Math.max(nextPlayTime,outputContext.currentTime+0.02);source.start(nextPlayTime);nextPlayTime+=buffer.duration;
-    playbackSources.add(source);source.onended=()=>{playbackSources.delete(source);if(playbackSources.size===0&&!suppressPlayback){setState(null,listening?"Listening…":"Gemini Live · ready");}};setState("speaking","Puja is speaking · Gemini Live");
-  }
-  function stopPlayback(){
-    for(const source of playbackSources){try{source.stop();}catch(_){}try{source.disconnect();}catch(_){}}
-    playbackSources.clear();nextPlayTime=0;setState(null,listening?"Listening…":"Gemini Live · ready");
-  }
   async function getLiveToken(){
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),10000);
@@ -372,17 +330,8 @@
 
   async function sendTextTurn(text){
     const value=String(text||"").trim();if(!value)return;
-    addMessage(value,"user");
-    try{
-      await ensureSocket();await resumeOutput();inputRow=null;
-      socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:value}]}],turnComplete:true}}));
-      setState(null,"Puja is thinking…");
-    }catch(e){
-      console.warn("Puja Live unavailable; trying compatible text mode",e);
-      setState(null,"Switching to compatible voice mode…");
-      try{await sendFallbackText(value);}
-      catch(fallbackError){addMessage(fallbackError.message||"Puja is temporarily unavailable. Please try again.","bot");setState(null,"Puja · unavailable");}
-    }
+    try{await ensureSocket();await resumeOutput();addMessage(value,"user");inputRow=null;socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:value}]}],turnComplete:true}}));setState(null,"Puja is thinking…");}
+    catch(e){addMessage(e.message||"Puja is temporarily unavailable. Please try again.","bot");setState(null,"Gemini Live · unavailable");}
   }
   function stopTalking(){
     suppressPlayback=true;
@@ -414,8 +363,8 @@
     if(microphoneStream){for(const t of microphoneStream.getTracks())t.stop();microphoneStream=null;}
     setState(null,"Gemini Live · ready");
   }
-  function toggleMicrophone(){primeAudio();if(listening)stopMicrophone();else startMicrophone();}
-  function openPanel(){primeAudio();panel.classList.add("open");suppressPlayback=false;panel.setAttribute("aria-hidden","false");launcher.setAttribute("aria-expanded","true");closedByUser=false;ensureSocket().catch(e=>{console.warn("Puja Live connection unavailable",e);setState(null,"Compatible voice mode available");});}
+  function toggleMicrophone(){if(listening)stopMicrophone();else startMicrophone();}
+  function openPanel(){panel.classList.add("open");suppressPlayback=false;panel.setAttribute("aria-hidden","false");launcher.setAttribute("aria-expanded","true");closedByUser=false;ensureSocket().catch(e=>addMessage(e.message||"Puja is temporarily unavailable.","bot"));}
   function closePanel(){stopMicrophone();stopPlayback();panel.classList.remove("open");panel.setAttribute("aria-hidden","true");launcher.setAttribute("aria-expanded","false");closedByUser=true;if(socket)try{socket.close();}catch(_){}socket=null;setupReady=false;connecting=false;suppressPlayback=false;}
   launcher.addEventListener("click",openPanel);close?.addEventListener("click",closePanel);mic?.addEventListener("click",toggleMicrophone);stopBtn?.addEventListener("click",stopTalking);
   form.addEventListener("submit",e=>{e.preventDefault();const t=input.value.trim();input.value="";if(t)sendTextTurn(t);});
