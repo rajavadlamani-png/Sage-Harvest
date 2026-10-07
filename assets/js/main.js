@@ -40,3 +40,61 @@ document.addEventListener('DOMContentLoaded',()=>{
     select('field');
   });
 });
+
+
+/* Hero-only slideshow: 6 seconds per slide, 1.5-second crossfade. */
+document.addEventListener('DOMContentLoaded', function () {
+  const hero = document.querySelector('.hero-refined');
+  if (!hero) return;
+  const slides = Array.from(hero.querySelectorAll('.hero-slide[data-bg]'));
+  if (slides.length < 2) return;
+
+  const reducedMotion = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function loadSlide(slide) {
+    if (!slide || slide.dataset.loaded === 'true') return;
+    const imageUrl = slide.dataset.bg;
+    if (!imageUrl) return;
+    const image = new Image();
+    image.onload = function () {
+      slide.style.backgroundImage = 'url("' + imageUrl + '")';
+      slide.dataset.loaded = 'true';
+    };
+    image.onerror = function () {
+      slide.style.backgroundImage = 'url("' + imageUrl + '")';
+      slide.dataset.loaded = 'true';
+    };
+    image.src = imageUrl;
+  }
+
+  let activeIndex = Math.max(0, slides.findIndex(slide => slide.classList.contains('is-active')));
+  slides.forEach(slide => slide.classList.remove('is-active'));
+  slides[activeIndex].classList.add('is-active');
+  loadSlide(slides[activeIndex]);
+
+  if (reducedMotion) return;
+
+  let timer = null;
+  function advance() {
+    const nextIndex = (activeIndex + 1) % slides.length;
+    loadSlide(slides[nextIndex]);
+    slides[activeIndex].classList.remove('is-active');
+    slides[nextIndex].classList.add('is-active');
+    activeIndex = nextIndex;
+  }
+  function start() {
+    if (!timer) timer = window.setInterval(advance, 6000);
+  }
+  function stop() {
+    if (timer) {
+      window.clearInterval(timer);
+      timer = null;
+    }
+  }
+  hero.addEventListener('mouseenter', stop);
+  hero.addEventListener('mouseleave', start);
+  hero.addEventListener('focusin', stop);
+  hero.addEventListener('focusout', start);
+  start();
+});
