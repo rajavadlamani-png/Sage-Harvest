@@ -605,6 +605,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
             outputRow=null;outputText="";inputRow=null;activeVoiceTurnId=null;
             setState(null,listening?"Listening…":"Gemini Live · ready");
             pujaDebugFinishTurn();pujaDebugTurn=null;
+            if(voiceRecognitionWanted)startSpeechRecognitionCycle();
           }else{
             if(outputText)addLink(outputText);
             outputRow=null;outputText="";inputRow=null;
@@ -708,7 +709,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         pujaDebugRenderVoiceState();
       }
       const groundingText=qctx.matches.length
-        ? ("GROUNDING INSTRUCTIONS — Answer the visitor using ONLY the supplied published Sage Harvest entries below. Do not add, infer, assume or invent any factual detail that is not present in those entries. If the wording appears to contain a speech-recognition error, silently rephrase the visitor's question to the closest meaning supported by the supplied entries before answering. Do not introduce facts during rephrasing. Answer naturally and concisely.\n\n"+qctx.context+"\n\nVISITOR QUESTION: "+q+"\n\nNORMALIZED QUESTION IF NEEDED: "+(qctx.rephrasedQuery||q))
+        ? ("GROUNDING INSTRUCTIONS — Answer the visitor using ONLY the supplied published Sage Harvest entries below. Do not add, infer, assume or invent any factual detail that is not present in those entries. The supplied entries are authoritative; when they contain the requested information, answer it directly and do not say Sage Harvest is unaware of it. If the wording appears to contain a speech-recognition error, silently rephrase the visitor's question to the closest meaning supported by the supplied entries before answering. Do not introduce facts during rephrasing. Answer naturally and concisely.\n\n"+qctx.context+"\n\nVISITOR QUESTION: "+q+"\n\nNORMALIZED QUESTION IF NEEDED: "+(qctx.rephrasedQuery||q))
         : (qctx.smallTalk
           ? ("This is a simple courtesy/greeting. Respond naturally as Puja without introducing unsupported factual claims.\n\nVISITOR: "+q)
           : ("REPHRASE BEFORE REFUSAL — The visitor's speech transcript may contain recognition errors. First silently rephrase the question to the closest meaning supported by the published Sage Harvest website context. Do not add or invent facts while rephrasing. If the published website still does not clearly answer the rephrased question, speak exactly: \""+noKnowledgeAnswer()+"\"\n\nVISITOR QUESTION: "+q+"\n\nLOCALLY REPAIRED QUESTION IF ANY: "+(qctx.rephrasedQuery||q)));
