@@ -798,14 +798,13 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     if(listening||voiceRecognitionStarting)return;
     const SpeechRecognitionClass=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SpeechRecognitionClass){addMessage("Voice input isn't supported in this browser. Please use the text box below.","bot");setState(null,"Puja · text input ready");return;}
-    try{
-      await ensureSocket();await resumeOutput();
-      voiceRecognitionWanted=true;
-      startSpeechRecognitionCycle(SpeechRecognitionClass);
-    }catch(e){
-      voiceRecognitionWanted=false;listening=false;mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
-      addMessage("Voice input could not start in this browser. Please use the text box below.","bot");
-    }
+    voiceRecognitionWanted=true;
+    // Start browser speech capture immediately. Do not make the microphone wait
+    // for the Gemini socket, because a slow/reconnecting socket can otherwise
+    // make the mic button appear completely unresponsive.
+    try{await resumeOutput();}catch(_){}
+    startSpeechRecognitionCycle(SpeechRecognitionClass);
+    try{await ensureSocket();}catch(e){console.warn("Puja socket is still connecting; speech capture will continue.",e);}
   }
 
   function startSpeechRecognitionCycle(SpeechRecognitionClass){
