@@ -641,8 +641,10 @@
   function stopMicrophone(){
     const wasListening=listening;
     listening=false;
-    groundVoiceTurn=false;
-    pendingVoiceTranscript="";
+    // Keep groundVoiceTurn and pendingVoiceTranscript alive until Gemini
+    // emits turnComplete; that is when the final transcript is grounded
+    // against the published Sage Harvest knowledge.
+    
 
     // Explicitly close the current realtime audio turn so Gemini can finalize
     // the user's speech even when server-side VAD has not fired yet.
