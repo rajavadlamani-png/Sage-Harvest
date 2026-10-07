@@ -43,6 +43,35 @@
     const q=normalizeKnowledgeText(value);
     return /^(hi|hello|hey|good morning|good afternoon|good evening|thanks|thank you|thank you puja|who are you|what is your name|how are you|nice to meet you)[!?.,\s]*$/i.test(q);
   }
+  const PUJA_TOPIC_ROUTES = [
+    {keys:["raja vadlamani","who is raja","about raja","founder","principal advisor"],pages:["founder.html","about.html"]},
+    {keys:["careers","career","collaboration","work with sage harvest","join sage harvest","associate consultant","subject matter expert","strategic partner"],pages:["careers.html"]},
+    {keys:["when do consulting engagements","when will consulting engagements","engagements commence","consulting start date","start date","launch date"],pages:["services.html","index.html"]},
+    {keys:["services","what services","service offerings","what does sage harvest do"],pages:["services.html"]},
+    {keys:["digital and ai","digital ai","artificial intelligence","ai services","digital services"],pages:["digital-ai.html"]},
+    {keys:["sustainability","climate","carbon","mrv"],pages:["sustainability.html"]},
+    {keys:["international expansion","international trade","export","cross border","global expansion","india africa"],pages:["international-expansion.html"]},
+    {keys:["m and a","m&a","due diligence","acquisition","transaction"],pages:["ma-due-diligence.html"]},
+    {keys:["labs","sage harvest labs","rice seed climate ledger","carbon reduction calculator"],pages:["labs.html"]},
+    {keys:["case studies","case perspectives","examples","perspectives"],pages:["case-studies.html"]},
+    {keys:["insights","articles","published perspectives"],pages:["insights.html"]},
+    {keys:["fees","fee","pricing","price","commercial terms","rate card"],pages:["services.html"]},
+    {keys:["contact","talk to us","how do i contact","get in touch"],pages:["contact.html"]},
+    {keys:["confidentiality","confidential","privacy"],pages:["confidentiality.html","privacy.html"]},
+    {keys:["professional standards","independence","conflicts"],pages:["professional-standards.html"]}
+  ];
+
+  function routedKnowledge(value){
+    const q=normalizeKnowledgeText(value);
+    if(!q)return [];
+    const route=PUJA_TOPIC_ROUTES.find(r=>r.keys.some(k=>phraseInQuery(k,q)));
+    if(!route)return [];
+    const wanted=new Set(route.pages);
+    return knowledgeEntries
+      .filter(e=>wanted.has(String(e.url||"").split("/").pop()) || route.pages.some(p=>String(e.url||"").endsWith("/"+p)))
+      .map(e=>({...e,_score:100}));
+  }
+
   function matchKnowledge(value){
     const q=normalizeKnowledgeText(value);if(!q)return [];
     const rawTokens=q.split(/\s+/).filter(t=>t.length>2);
@@ -102,7 +131,8 @@
   async function getQuestionContext(value){
     await ensureKnowledge();
     if(isGreetingOrCourtesy(value))return {matches:[],context:SITE_KNOWLEDGE,smallTalk:true};
-    const matches=matchKnowledge(value);
+    const routed=routedKnowledge(value);
+    const matches=routed.length?routed:matchKnowledge(value);
     if(!matches.length)return {matches,context:"",smallTalk:false};
     return {matches,context:SITE_KNOWLEDGE+"\n\nCURRENT MATCHED PUBLISHED SITE ENTRIES — USE ONLY THESE ENTRIES FOR FACTUAL CONTENT IN THIS ANSWER. Do not use outside knowledge or any factual detail not supported by these entries. If these entries do not clearly answer the question, say so and direct the visitor to contact.html.\n\n"+formatMatchedKnowledge(matches),smallTalk:false};
   }
