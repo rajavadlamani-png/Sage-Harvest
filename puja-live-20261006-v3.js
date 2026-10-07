@@ -11,6 +11,8 @@
   if(!panel||!launcher||!form||!input||!messages)return;
 
   let socket=null, setupReady=false, connecting=false, suppressPlayback=false;
+  let voiceMuted=false;
+  try{voiceMuted=sessionStorage.getItem("pujaVoiceMuted")==="true";}catch(_){}
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0;
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
   let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
@@ -385,10 +387,14 @@
     }
   }
   function stopTalking(){
+    voiceMuted=true;
+    try{sessionStorage.setItem("pujaVoiceMuted","true");}catch(_){}
     suppressPlayback=true;
     stopPlayback();
+    if("speechSynthesis" in window)try{window.speechSynthesis.cancel();}catch(_){}
+    if(stopBtn)stopBtn.textContent="Enable voice";
     if(socket&&socket.readyState===WebSocket.OPEN)try{socket.send(JSON.stringify({clientContent:{turnComplete:true}}));}catch(_){}
-    setState(null,listening?"Listening…":"Gemini Live · ready");
+    setState(null,"Voice off · text still available");
   }
   function downsample(data,inputRate){
     if(inputRate===INPUT_RATE)return data;const ratio=inputRate/INPUT_RATE,newLength=Math.round(data.length/ratio),out=new Float32Array(newLength);let offset=0;
@@ -415,9 +421,17 @@
     setState(null,"Gemini Live · ready");
   }
   function toggleMicrophone(){primeAudio();if(listening)stopMicrophone();else startMicrophone();}
-  function openPanel(){primeAudio();panel.classList.add("open");suppressPlayback=false;panel.setAttribute("aria-hidden","false");launcher.setAttribute("aria-expanded","true");closedByUser=false;ensureSocket().catch(e=>{console.warn("Puja Live connection unavailable",e);setState(null,"Compatible voice mode available");});}
+  function openPanel(){
+    primeAudio();
+    voiceMuted=false;
+    try{sessionStorage.removeItem("pujaVoiceMuted");}catch(_){}
+    if(stopBtn)stopBtn.textContent="Stop voice";
+    panel.classList.add("open");suppressPlayback=false;panel.setAttribute("aria-hidden","false");launcher.setAttribute("aria-expanded","true");closedByUser=false;
+    ensureSocket().catch(e=>{console.warn("Puja Live connection unavailable",e);setState(null,"Compatible voice mode available");});
+  }
   function closePanel(){stopMicrophone();stopPlayback();panel.classList.remove("open");panel.setAttribute("aria-hidden","true");launcher.setAttribute("aria-expanded","false");closedByUser=true;if(socket)try{socket.close();}catch(_){}socket=null;setupReady=false;connecting=false;suppressPlayback=false;}
-  launcher.addEventListener("click",openPanel);close?.addEventListener("click",closePanel);mic?.addEventListener("click",toggleMicrophone);stopBtn?.addEventListener("click",stopTalking);
+  launcher.addEventListener("click",openPanel);close?.addEventListener("click",closePanel);mic?.addEventListener("click",toggleMicrophone);
+  stopBtn?.addEventListener("click",()=>{if(voiceMuted){voiceMuted=false;try{sessionStorage.removeItem("pujaVoiceMuted");}catch(_){}stopBtn.textContent="Stop voice";setState(null,"Voice enabled · ready");}else stopTalking();});
   form.addEventListener("submit",e=>{e.preventDefault();const t=input.value.trim();input.value="";if(t)sendTextTurn(t);});
   document.querySelectorAll("[data-puja-question]").forEach(b=>b.addEventListener("click",()=>sendTextTurn(b.getAttribute("data-puja-question")||"")));
   setState(null,"Gemini Live · ready");
