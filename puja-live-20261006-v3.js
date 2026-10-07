@@ -341,12 +341,16 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     addMessage(data.answer,"bot");addKnowledgeLinks(qctx.matches);addLink(data.answer);speakFallback(data.answer);
     setState(null,"Text voice mode · ready");
   }
-  async function playPcm(b64){
+  async function playPcm(b64,generation){
     if(!b64)return;
     await resumeOutput();
+    // Stop may have happened while resumeOutput() was awaiting the audio context.
+    // Re-check the generation before creating or starting any new audio source.
+    if(generation!==playbackGeneration)return false;
     const bytes=b64bytes(b64),pcm=new Int16Array(bytes.buffer,bytes.byteOffset,Math.floor(bytes.byteLength/2));
     const buffer=outputContext.createBuffer(1,pcm.length,OUTPUT_RATE),channel=buffer.getChannelData(0);
     for(let i=0;i<pcm.length;i++)channel[i]=pcm[i]/32768;
+    if(generation!==playbackGeneration)return false;
     const source=outputContext.createBufferSource();source.buffer=buffer;source.connect(outputContext.destination);
     nextPlayTime=Math.max(nextPlayTime,outputContext.currentTime+0.02);
     if(pujaDebugTurn&&pujaDebugTurn.playbackStartPerfMs==null){pujaDebugTurn.playbackStartPerfMs=performance.now();pujaDebug("playback_start",{turnId:pujaDebugTurn.id});}
@@ -354,13 +358,17 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     playbackSources.add(source);
     source.onended=()=>{playbackSources.delete(source);if(playbackSources.size===0&&!suppressPlayback)setState(null,listening?"Listening…":"Gemini Live · ready");};
     setState("speaking","Puja is speaking · Gemini Live");
+    return true;
   }
   function queuePcm(b64,turnId){
     if(!b64)return;
     const generation=playbackGeneration;
     playbackQueue=playbackQueue.catch(()=>{}).then(async()=>{
       if(generation!==playbackGeneration)return;
-      try{await playPcm(b64);pujaDebug("audio_chunk_playback",{turnId:turnId||null});}
+      try{
+        const played=await playPcm(b64,generation);
+        if(played)pujaDebug("audio_chunk_playback",{turnId:turnId||null});
+      }
       catch(e){console.warn("Puja audio playback failed",e);setState(null,"Puja audio unavailable");}
     });
   }
@@ -369,7 +377,11 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     playbackGeneration++;
     playbackQueue=Promise.resolve();
     for(const source of playbackSources){try{source.stop();}catch(_){}try{source.disconnect();}catch(_){}}
-    playbackSources.clear();nextPlayTime=0;setState(null,listening?"Listening…":"Gemini Live · ready");
+    playbackSources.clear();
+    nextPlayTime=0;
+    // Suspend immediately so already-scheduled Web Audio cannot continue audibly.
+    try{if(outputContext&&outputContext.state==="running")outputContext.suspend();}catch(_){}
+    setState(null,listening?"Listening…":"Gemini Live · ready");
   }
   async function getLiveToken(){
     const controller=new AbortController();
