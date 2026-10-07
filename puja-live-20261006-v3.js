@@ -120,7 +120,7 @@
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0;
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
   let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
-  let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="";
+  let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="", voiceGroundingSent=false;
 
   function setState(state,label){
     avatar?.classList.remove("speaking","listening"); mini?.classList.remove("speaking","listening");
@@ -393,10 +393,30 @@
             }else{
               inputRow.textContent=t;
             }
+
+            // inputTranscription is the finalized speech transcript. Ground it
+            // immediately instead of waiting for the first Live model turn to
+            // finish; this removes the unnecessary two-pass response delay.
+            if(groundVoiceTurn&&!voiceGroundingSent){
+              voiceGroundingSent=true;
+              groundVoiceTurn=false;
+              outputRow=null;
+              outputText="";
+              audioChunksThisTurn=0;
+              try{
+                await sendGroundedVoiceTurn(t);
+              }catch(e){
+                suppressPlayback=false;
+                addMessage(e?.message||"Puja could not answer that voice question right now.","bot");
+                setState(null,"Puja · unavailable");
+              }
+              return;
+            }
           }
         }
 
         if(s.outputTranscription?.text){
+          if(groundVoiceTurn)return;
           if(!outputRow){
             outputRow=addMessage("","bot");
           }
@@ -418,9 +438,10 @@
         }
 
         if(s.turnComplete){
-          if(groundVoiceTurn && pendingVoiceTranscript.trim()){
+          if(groundVoiceTurn && pendingVoiceTranscript.trim()&&!voiceGroundingSent){
             const voiceQuestion=pendingVoiceTranscript.trim();
             groundVoiceTurn=false;
+            voiceGroundingSent=true;
             pendingVoiceTranscript="";
             outputRow=null;
             outputText="";
@@ -623,6 +644,7 @@
 
       listening=true;
       groundVoiceTurn=true;
+      voiceGroundingSent=false;
       pendingVoiceTranscript="";
       // Hold back the automatic first-pass Live response until the
       // transcribed question has been grounded against the website.
