@@ -204,3 +204,77 @@ footer .copyright{align-self:end}
 .hero-banner{width:100%;margin:0;padding:0;background:#fbfaf6;line-height:0;overflow:hidden}
 .hero-banner img{display:block;width:100%;height:auto;max-width:none;object-fit:contain}
 @media(max-width:600px){.hero-banner img{width:100%;height:auto}}
+
+
+/* Refined editorial homepage hero — keep the banner for social previews, not as a full-page poster */
+.hero-refined{
+  min-height:0;
+  padding:clamp(52px,7vw,100px) 7vw;
+  grid-template-columns:minmax(0,1.05fr) minmax(300px,.8fr);
+  gap:clamp(36px,6vw,90px);
+  background:linear-gradient(115deg,#fbfaf6 0%,#f3f1e8 100%);
+}
+.hero-refined .hero-copy{max-width:690px}
+.hero-refined .hero-copy .eyebrow{line-height:1.6}
+.hero-refined h1{
+  max-width:720px;
+  font-size:clamp(48px,5.4vw,78px);
+  line-height:1.02;
+  letter-spacing:-2.8px;
+  margin-bottom:22px;
+}
+.hero-refined .lead{max-width:620px;font-size:clamp(18px,1.55vw,22px);line-height:1.65}
+.hero-refined .actions{gap:22px;flex-wrap:wrap;margin-top:28px}
+.hero-refined .hero-proof{
+  margin:28px 0 0;
+  max-width:540px;
+  color:#68736a;
+  font-size:13px;
+  line-height:1.6;
+  letter-spacing:.015em;
+}
+.hero-refined .hero-image-panel{
+  display:block;
+  min-height:460px;
+  width:100%;
+  border-radius:22px;
+  overflow:hidden;
+  background-color:#e9eee4;
+  background-image:url('../img/sage-harvest-home-banner.png');
+  background-repeat:no-repeat;
+  background-position:right center;
+  background-size:auto 100%;
+  box-shadow:0 24px 65px rgba(18,59,43,.13);
+  border:1px solid rgba(18,59,43,.08);
+}
+@media(max-width:900px){
+  .hero-refined{
+    grid-template-columns:1fr;
+    gap:30px;
+    padding:52px 7vw 44px;
+  }
+  .hero-refined .hero-copy{max-width:760px}
+  .hero-refined h1{font-size:clamp(44px,8vw,66px);letter-spacing:-1.8px}
+  .hero-refined .hero-image-panel{
+    width:min(100%,440px);
+    min-height:330px;
+    margin-left:auto;
+    background-size:auto 100%;
+    background-position:right center;
+  }
+}
+@media(max-width:600px){
+  .hero-refined{padding:42px 6vw 34px;gap:25px}
+  .hero-refined h1{font-size:clamp(41px,10.4vw,54px);line-height:1.03;margin-bottom:17px}
+  .hero-refined .lead{font-size:17px;line-height:1.6}
+  .hero-refined .actions{gap:16px;margin-top:22px}
+  .hero-refined .hero-proof{margin-top:20px;font-size:12px}
+  .hero-refined .hero-image-panel{
+    width:84%;
+    min-height:300px;
+    margin-left:auto;
+    border-radius:18px;
+    background-size:auto 100%;
+    background-position:right center;
+  }
+}
