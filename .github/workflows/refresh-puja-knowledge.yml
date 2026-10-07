@@ -1,0 +1,32 @@
+name: Refresh Puja knowledge
+
+on:
+  push:
+    paths:
+      - "*.html"
+      - "**/*.html"
+      - "scripts/build-puja-knowledge.mjs"
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/build-puja-knowledge.mjs
+      - name: Commit refreshed knowledge
+        run: |
+          if git diff --quiet -- assets/data/puja-knowledge.json; then
+            echo "Knowledge file is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/data/puja-knowledge.json
+          git commit -m "Auto-refresh Puja knowledge"
+          git push
