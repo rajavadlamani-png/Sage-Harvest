@@ -551,7 +551,13 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
         if(s.interrupted){
           audioChunksThisTurn=0;
           stopPlayback();
-          suppressPlayback=true;
+          if(groundingInterruptExpected){
+            groundingInterruptExpected=false;
+            suppressPlayback=false;
+            pujaDebug("grounding_interrupt_ack",{turnId:pujaDebugTurn?.id});
+          }else{
+            suppressPlayback=true;
+          }
           outputRow=null;
           outputText="";
           return;
