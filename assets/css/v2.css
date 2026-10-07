@@ -236,7 +236,7 @@ footer .copyright{align-self:end}
 .hero-refined .hero-image-panel{
   display:block;width:100%;aspect-ratio:1.894 / 1;min-height:0;height:auto;
   border-radius:22px;overflow:hidden;background-color:#e9eee4;
-  background-image:url('../img/seed-chain-diagram.svg');
+  background-image:url('../img/seed.svg');
   background-repeat:no-repeat;background-position:center center;background-size:contain;
   box-shadow:0 24px 65px rgba(18,59,43,.13);border:1px solid rgba(18,59,43,.08);
 }
@@ -347,16 +347,19 @@ main>.compact-services.section article a{display:inline-block;margin-top:8px;fon
   background-position:center;
   animation:seed-hero-breathe 6s ease-in-out infinite;
 }
+.hero-refined .hero-image-panel:before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:#f4f3ec url('../img/seed-chain-diagram.svg') center / contain no-repeat;
+  opacity:0;animation:seed-hero-crossfade 6s ease-in-out infinite;
+}
 .hero-refined .hero-image-panel:after{
-  content:"";
-  position:absolute;inset:0;pointer-events:none;border-radius:inherit;
-  background:linear-gradient(115deg,transparent 25%,rgba(255,255,255,.24) 48%,transparent 68%);
-  background-size:220% 100%;
-  animation:seed-hero-sheen 4s ease-in-out infinite;
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(115deg,transparent 25%,rgba(255,255,255,.22) 48%,transparent 68%);
+  background-size:220% 100%;animation:seed-hero-sheen 4s ease-in-out infinite;
 }
 @keyframes seed-hero-breathe{0%,100%{background-position:center center;filter:saturate(.96)}50%{background-position:center 48%;filter:saturate(1.05)}}
-@keyframes seed-hero-sheen{0%,100%{background-position:130% 0}50%{background-position:-30% 0}}
-@media(prefers-reduced-motion:reduce){.hero-refined .hero-image-panel,.hero-refined .hero-image-panel:after{animation:none!important}}
+@keyframes seed-hero-sheen{0%,100%{background-position:130% 0}50%{background-position:-30% 0}}\n@keyframes seed-hero-crossfade{0%,35%{opacity:0}50%,82%{opacity:1}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.hero-refined .hero-image-panel,.hero-refined .hero-image-panel:before,.hero-refined .hero-image-panel:after{animation:none!important}}
 /* Verification First remains a distinct editorial section below the seed-system experience. */
 .verification-section.section{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:center}
 .verification-visual{width:100%;aspect-ratio:1705 / 900;min-height:220px;border-radius:18px;border:1px solid rgba(18,59,43,.1);background:#f3f0e7 url('../img/verification-first.png') center center / contain no-repeat;box-shadow:0 16px 40px rgba(18,59,43,.10)}
