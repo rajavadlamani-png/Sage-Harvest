@@ -419,7 +419,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
           stopCommandRetryTimer=setTimeout(()=>{
             stopCommandRetryTimer=null;
             startStopCommandListener();
-          },150);
+          },80);
         }
       };
       recognition.start();
