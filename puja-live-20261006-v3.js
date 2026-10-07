@@ -131,47 +131,7 @@ Always use the search function for Sage Harvest factual questions. The returned 
   }
   function formatAllKnowledge(){
     return knowledgeEntries.map(e=>"PAGE TITLE: "+e.page_title+"\nSECTION: "+e.section_heading+"\nSOURCE URL: "+e.url+"\nPUBLISHED TEXT: "+e.text).join("\n\n");
-  }  function searchWebsiteKnowledge(query){
-    const value=String(query||"").trim();
-    if(!value)return {query:value,results:[],message:"No relevant published Sage Harvest website content was found."};
-    const routed=routedKnowledge(value);
-    const matches=routed.length?routed:matchKnowledge(value);
-    const results=matches.slice(0,3).map(e=>({
-      page_title:e.page_title,
-      section_heading:e.section_heading,
-      url:e.url,
-      published_text:e.text
-    }));
-    return {query:value,results,message:results.length?"Use ONLY these published website entries for the answer.":"No relevant published Sage Harvest website content was found."};
-  }
-
-  function handleWebsiteToolCall(toolCall,ws){
-    const functionResponses=[];
-    for(const fc of(toolCall?.functionCalls||[])){
-      try{
-        if(fc.name!=="search_website_knowledge"){
-          functionResponses.push({name:fc.name,id:fc.id,response:{error:"Unknown function."}});
-          continue;
-        }
-        const result=searchWebsiteKnowledge((fc.args||{}).query||"");
-        console.debug("[Puja] website knowledge tool",{
-          query:(fc.args||{}).query||"",
-          results:result.results.length,
-          pages:result.results.map(r=>r.url)
-        });
-        functionResponses.push({name:fc.name,id:fc.id,response:{result}});
-      }catch(error){
-        console.error("[Puja] website knowledge tool error",error);
-        functionResponses.push({name:fc.name,id:fc.id,response:{error:"The website knowledge search failed."}});
-      }
-    }
-    if(functionResponses.length&&ws===socket&&ws.readyState===WebSocket.OPEN){
-      ws.send(JSON.stringify({toolResponse:{functionResponses:functionResponses}}));
-    }
-  }
-
-
-  function noKnowledgeAnswer(){return "I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.";}
+  }  function noKnowledgeAnswer(){return "I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.";}
   function addKnowledgeLinks(matches){
     const seen=new Set();
     for(const e of matches.slice(0,2)){
@@ -379,7 +339,7 @@ Always use the search function for Sage Harvest factual questions. The returned 
         ws.send(JSON.stringify({
           setup:{
             model:MODEL,
-            systemInstruction:{parts:[{text:SITE_KNOWLEDGE}]},
+            systemInstruction:{parts:[{text:await getCurrentKnowledgeInstruction()}]},
             generationConfig:{
               responseModalities:["AUDIO"],
               speechConfig:{
@@ -389,19 +349,7 @@ Always use the search function for Sage Harvest factual questions. The returned 
                   }
                 }
               }
-            },            tools:[{
-              functionDeclarations:[{
-                name:"search_website_knowledge",
-                description:"Search the current published Sage Harvest website knowledge for the visitor's question. This runs locally against puja-knowledge.json. Use it for every factual question about Sage Harvest.",
-                parameters:{
-                  type:"OBJECT",
-                  properties:{query:{type:"STRING",description:"The visitor's Sage Harvest question or topic to search for."}},
-                  required:["query"]
-                }
-              }]
-            }],
-
-            inputAudioTranscription:{},
+            },            inputAudioTranscription:{},
             outputAudioTranscription:{},
             sessionResumption:{}
           }
@@ -454,11 +402,6 @@ Always use the search function for Sage Harvest factual questions. The returned 
           try{ws.close();}catch(_){}
 
           fail(new Error(detail));
-          return;
-        }
-
-        if(m.toolCall){
-          handleWebsiteToolCall(m.toolCall,ws);
           return;
         }
 
