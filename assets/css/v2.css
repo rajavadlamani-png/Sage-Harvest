@@ -493,3 +493,10 @@ main>.compact-services.section article a{display:inline-block;margin-top:8px;fon
 .home-principle h2{font-size:clamp(30px,3.8vw,46px);line-height:1.08;letter-spacing:-1.2px;margin:0 0 12px}
 .home-principle h2 em{color:#174833}
 .home-principle>p:not(.eyebrow){max-width:760px;color:#647168;line-height:1.7;margin:0 0 14px}
+
+/* Restore the original Verification First illustration on the homepage. */
+.home-principle.section{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.85fr);align-items:center;gap:clamp(28px,5vw,72px)}
+.home-principle-copy{min-width:0}
+.home-principle-visual{display:flex;align-items:center;justify-content:center;min-width:0}
+.home-principle-visual img{display:block;width:100%;max-width:560px;height:auto;max-height:360px;object-fit:contain;border-radius:16px}
+@media(max-width:760px){.home-principle.section{grid-template-columns:1fr;gap:24px}.home-principle-visual img{max-width:520px;max-height:300px}}
