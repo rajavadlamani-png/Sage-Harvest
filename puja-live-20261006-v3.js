@@ -13,7 +13,7 @@
     if (pujaDebugTurn && !window.__pujaDebugTurns.includes(pujaDebugTurn)) window.__pujaDebugTurns.push(pujaDebugTurn);
   }
   function pujaDebugNewTurn(source) {
-    pujaDebugTurn = {id:"turn-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),source,startedAt:new Date().toISOString(),speechEndPerfMs:null,transcriptParts:[],transcript:"",route:"none",knowledgeEntries:0,knowledgeChars:0,knowledgeApproxTokens:0,matches:[],notFoundTriggered:false,notFoundReason:null,firstAudioPerfMs:null,playbackStartPerfMs:null,turnCompletePerfMs:null,generationCount:0,serverContentCount:0,outboundGenerations:0};
+    pujaDebugTurn = {id:"turn-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),source,startedAt:new Date().toISOString(),speechEndPerfMs:null,transcriptParts:[],transcript:"",route:"none",knowledgeEntries:0,knowledgeChars:0,knowledgeApproxTokens:0,matches:[],notFoundTriggered:false,notFoundReason:null,firstAudioPerfMs:null,playbackStartPerfMs:null,turnCompletePerfMs:null,generationCount:0,rawGenerationCount:0,groundedGenerationCount:0,serverContentCount:0,outboundGenerations:0};
     if (PUJA_DEBUG) { window.__pujaDebugTurns=window.__pujaDebugTurns||[]; window.__pujaDebugTurns.push(pujaDebugTurn); }
     pujaDebug("turn_start",{turnId:pujaDebugTurn.id,source}); return pujaDebugTurn;
   }
@@ -26,7 +26,7 @@
   function pujaDebugFinishTurn() {
     if(!pujaDebugTurn)return;
     const t=pujaDebugTurn;
-    pujaDebug("turn_summary",{turnId:t.id,transcript:t.transcript,route:t.route,knowledgeEntries:t.knowledgeEntries,knowledgeChars:t.knowledgeChars,approximateTokens:t.knowledgeApproxTokens,matches:t.matches,notFoundTriggered:t.notFoundTriggered,notFoundReason:t.notFoundReason,generationCount:t.generationCount,outboundGenerations:t.outboundGenerations,speechEndToFirstAudioMs:t.speechEndPerfMs!=null&&t.firstAudioPerfMs!=null?Math.round(t.firstAudioPerfMs-t.speechEndPerfMs):null,firstAudioToPlaybackStartMs:t.firstAudioPerfMs!=null&&t.playbackStartPerfMs!=null?Math.round(t.playbackStartPerfMs-t.firstAudioPerfMs):null,speechEndToTurnCompleteMs:t.speechEndPerfMs!=null&&t.turnCompletePerfMs!=null?Math.round(t.turnCompletePerfMs-t.speechEndPerfMs):null});
+    pujaDebug("turn_summary",{turnId:t.id,transcript:t.transcript,route:t.route,knowledgeEntries:t.knowledgeEntries,knowledgeChars:t.knowledgeChars,approximateTokens:t.knowledgeApproxTokens,matches:t.matches,notFoundTriggered:t.notFoundTriggered,notFoundReason:t.notFoundReason,generationCount:t.generationCount,rawGenerationCount:t.rawGenerationCount,groundedGenerationCount:t.groundedGenerationCount,outboundGenerations:t.outboundGenerations,speechEndToFirstAudioMs:t.speechEndPerfMs!=null&&t.firstAudioPerfMs!=null?Math.round(t.firstAudioPerfMs-t.speechEndPerfMs):null,firstAudioToPlaybackStartMs:t.firstAudioPerfMs!=null&&t.playbackStartPerfMs!=null?Math.round(t.playbackStartPerfMs-t.firstAudioPerfMs):null,speechEndToTurnCompleteMs:t.speechEndPerfMs!=null&&t.turnCompletePerfMs!=null?Math.round(t.turnCompletePerfMs-t.speechEndPerfMs):null});
   }
   function pujaDebugRenderVoiceState(){
     if(!PUJA_DEBUG||!pujaDebugTurn)return;
@@ -70,7 +70,7 @@ ANSWERING PRIORITY:
 - If the visitor asks a follow-up, use the new grounding context supplied for that follow-up.
 - Greetings and simple courtesy may be answered naturally.
 
-The locally loaded published Sage Harvest knowledge is the only factual website source.`;
+The locally loaded published Sage Harvest knowledge is the factual source used to prepare each grounded turn.`;
 
   const KNOWLEDGE_URL = "assets/data/puja-knowledge.json";
   let knowledgeEntries = [];
@@ -158,23 +158,19 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
     return 1-(levenshteinDistance(aa,bb)/Math.max(aa.length,bb.length));
   }
   function repairSpeechQuery(value){
-    let q=String(value||"").trim();
-    if(!q)return {query:"",changes:[]};
+    const original=String(value||"").trim();
+    if(!original)return {query:"",changes:[]};
+    const tokens=normalizeKnowledgeText(original).split(/\s+/).filter(Boolean);
+    const vocabulary=[...new Set(knowledgeEntries.flatMap(e=>[e.page_title||"",e.section_heading||"",...(e.keywords||[]),...(e.synonyms||[])]).flatMap(v=>normalizeKnowledgeText(v).split(/\s+/)).filter(t=>t.length>=4))];
     const changes=[];
-    const replacements=[
-      [/\bmay know\b/ig,"tell me"],
-      [/\bcan know\b/ig,"tell me"],
-      [/\bme know about\b/ig,"tell me about"]
-    ];
-    for(const [pattern,replacement] of replacements){
-      if(pattern.test(q)){q=q.replace(pattern,replacement);changes.push(replacement);}
-    }
-    const nq=normalizeKnowledgeText(q);
-    if(/career|collaboration|associate consultant|subject matter|strategic partner/.test(nq)&&/caristix|carriest|carear|cary\b/.test(nq)){
-      q=q.replace(/\bcaristix\b/ig,"careers").replace(/\bcarriest\b/ig,"careers").replace(/\bcarear\b/ig,"career");
-      changes.push("careers");
-    }
-    return {query:q,changes};
+    const repaired=tokens.map(token=>{
+      if(token.length<4)return token;
+      let best=null;
+      for(const candidate of vocabulary){const sim=fuzzySimilarity(token,candidate);if(sim>=0.84&&(!best||sim>best.sim))best={candidate,sim};}
+      if(best&&best.candidate!==token){changes.push({from:token,to:best.candidate,similarity:Number(best.sim.toFixed(2))});return best.candidate;}
+      return token;
+    }).join(" ");
+    return {query:repaired||original,changes};
   }
   function fuzzyKnowledgeMatches(value){
     const q=normalizeKnowledgeText(value);if(!q)return [];
@@ -246,7 +242,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
       if(!e.url||seen.has(e.url))continue;
       seen.add(e.url);
       const wrap=document.createElement("div");wrap.className="puja-navigation-link";
-      const a=document.createElement("a");a.className="puja-inline-link";a.href=e.url;a.textContent="Learn more: "+e.page_title+" →";
+      const a=document.createElement("a");a.className="puja-inline-link";a.href=e.url;a.target="_blank";a.rel="noopener";a.textContent="Learn more: "+e.page_title+" →";
       wrap.appendChild(a);messages.appendChild(wrap);
     }
     messages.scrollTop=messages.scrollHeight;
@@ -256,7 +252,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
     const corpus=formatAllKnowledge();
     pujaDebug("local_knowledge_loaded",{entries:knowledgeEntries.length,chars:corpus.length,approximateTokens:Math.round(corpus.length/4),truncated:false});
     if(pujaDebugSession)pujaDebugSession.localKnowledge={entries:knowledgeEntries.length,chars:corpus.length,approximateTokens:Math.round(corpus.length/4),truncated:false};
-    return SITE_KNOWLEDGE+"\n\nLIVE VOICE GROUNDING POLICY — The published Sage Harvest knowledge is loaded locally in the browser and is used to prepare turn-specific grounding context. Use only that grounding context for factual content. Do not use outside knowledge, assumptions or invented facts. If the tool reports that no published entries clearly answer the question, speak exactly this response: \"I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\" Do not invent vacancies, clients, results, fees, offices, commitments or dates. For greetings and simple courtesy, respond naturally without calling the tool.";
+    return SITE_KNOWLEDGE+"\n\nLIVE VOICE GROUNDING POLICY — The published Sage Harvest knowledge is loaded locally in the browser and is used to prepare turn-specific grounding context. Use only that grounding context for factual content. Do not use outside knowledge, assumptions or invented facts. If the locally selected published entries do not clearly answer the question, speak exactly this response: \"I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\" Do not invent vacancies, clients, results, fees, offices, commitments or dates. For greetings and simple courtesy, respond naturally without calling the tool.";
   }
   async function getQuestionContext(value){
     await ensureKnowledge();
@@ -284,7 +280,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
         avatar=$("pujaAvatar"), mini=$("pujaMiniAvatar"), status=$("pujaStatus"), stopBtn=$("pujaStopSpeaking");
   if(!panel||!launcher||!form||!input||!messages)return;
 
-  let socket=null, setupReady=false, connecting=false, suppressPlayback=false;
+  let socket=null, setupReady=false, connecting=false, suppressPlayback=false, activeVoiceTurnId=null, sessionResumptionHandle=null;
   let voiceMuted=false;
   try{voiceMuted=sessionStorage.getItem("pujaVoiceMuted")==="true";}catch(_){}
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0;
@@ -476,22 +472,8 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
                 }
               }
             },
-            realtimeInputConfig:{
-              automaticActivityDetection:{
-                disabled:true
-              }
-            },
-            inputAudioTranscription:{
-              customVocabulary:[
-                "Sage Harvest","Raja Vadlamani","careers","Careers & Collaboration",
-                "collaboration","consulting engagements","Seed Supply Chain Strategy",
-                "Digital & AI","Sustainability & Climate","International Expansion & Trade",
-                "M&A Supply Chain Due Diligence","Strategic & Leadership Advisory",
-                "due diligence","supply chain","Sage Harvest Agro"
-              ]
-            },
             outputAudioTranscription:{},
-            sessionResumption:{}
+            sessionResumption:{handle:sessionResumptionHandle}
           }
         }));
       };
@@ -545,55 +527,19 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
           return;
         }
 
+        if(m.sessionResumptionUpdate){
+          const u=m.sessionResumptionUpdate;
+          if(u.resumable&&u.newHandle)sessionResumptionHandle=u.newHandle;
+        }
+        if(m.goAway)pujaDebug("go_away",{timeLeft:m.goAway?.timeLeft??null});
         const s=m.serverContent;
         if(!s)return;
 
         if(s.interrupted){
-          audioChunksThisTurn=0;
           stopPlayback();
-          if(groundingInterruptExpected){
-            groundingInterruptExpected=false;
-            suppressPlayback=false;
-            pujaDebug("grounding_interrupt_ack",{turnId:pujaDebugTurn?.id});
-          }else{
-            suppressPlayback=true;
-          }
-          outputRow=null;
-          outputText="";
+          if(activeVoiceTurnId&&pujaDebugTurn?.id===activeVoiceTurnId)pujaDebug("grounded_turn_interrupted",{turnId:activeVoiceTurnId});
+          else pujaDebug("late_interruption_ignored",{turnId:activeVoiceTurnId||null});
           return;
-        }
-
-        if(s.interimInputTranscription?.text){
-          setState("listening","Listening…");
-        }
-
-        if(s.inputTranscription?.text){
-          const t=s.inputTranscription.text.trim();
-
-          if(t){
-            if(!pujaDebugTurn)pujaDebugNewTurn("voice");
-            pujaDebugTurn.transcriptParts.push(t);
-            pujaDebugTurn.transcript=pujaDebugTurn.transcriptParts.join(" ");
-            pujaDebug("input_transcription",{turnId:pujaDebugTurn.id,fragment:t,transcript:pujaDebugTurn.transcript});
-            pujaDebugRenderVoiceState();
-            ensureKnowledge().then(()=>{
-              if(!pujaDebugTurn)return;
-              const routed=routedKnowledge(pujaDebugTurn.transcript);
-              const matches=routed.length?routed:matchKnowledge(pujaDebugTurn.transcript);
-              pujaDebugKnowledge(knowledgeEntries.length,formatAllKnowledge().length,routed.length?"routed":"keyword",matches);
-              pujaDebugRenderVoiceState();
-            }).catch(()=>{});
-            pendingVoiceTranscript=t;
-            if(!inputRow){
-              inputRow=addMessage(t,"user");
-            }else{
-              inputRow.textContent=t;
-            }
-
-            if(voiceSpeechEnded&&!voiceGroundingSent){
-              scheduleVoiceGrounding("final_transcript");
-            }
-          }
         }
 
         if(s.outputTranscription?.text){
@@ -616,37 +562,24 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
           pujaDebugTurn.serverContentCount++;pujaDebugTurn.generationCount++;
           pujaDebug("model_generation",{turnId:pujaDebugTurn.id,generationCount:pujaDebugTurn.generationCount,partCount:s.modelTurn.parts.length});
         }
-        if(!suppressPlayback&&voiceGroundingSent){
+        if(activeVoiceTurnId&&pujaDebugTurn?.id===activeVoiceTurnId){
           for(const part of(s.modelTurn?.parts||[])){
             const inline=part?.inlineData||part?.inline_data;
-
             if(inline?.data){
-              audioChunksThisTurn++;
-              if(pujaDebugTurn&&pujaDebugTurn.firstAudioPerfMs==null){pujaDebugTurn.firstAudioPerfMs=performance.now();pujaDebug("first_audio_chunk",{turnId:pujaDebugTurn.id,audioChunkNumber:audioChunksThisTurn});}
+              if(pujaDebugTurn.firstAudioPerfMs==null){pujaDebugTurn.firstAudioPerfMs=performance.now();pujaDebug("first_audio_chunk",{turnId:activeVoiceTurnId});}
               await playPcm(inline.data);
             }
           }
         }
 
         if(s.turnComplete){
-          if(pujaDebugTurn){pujaDebugTurn.turnCompletePerfMs=performance.now();pujaDebug("turn_complete",{turnId:pujaDebugTurn.id,generationCount:pujaDebugTurn.generationCount,audioChunks:audioChunksThisTurn});}
-          if(outputText && audioChunksThisTurn===0){
-            console.warn("Puja Live: turn completed with transcription but no audio chunks received.");
-          }
+          if(!pujaDebugTurn||pujaDebugTurn.id!==activeVoiceTurnId){pujaDebug("late_turn_complete_ignored",{turnId:activeVoiceTurnId||null});return;}
+          pujaDebugTurn.turnCompletePerfMs=performance.now();
+          pujaDebug("turn_complete",{turnId:activeVoiceTurnId,generationCount:pujaDebugTurn.generationCount});
           if(outputText)addLink(outputText);
-
-          outputRow=null;
-          outputText="";
-          inputRow=null;
-          suppressPlayback=false;
-          voiceGroundingSent=false;
-          voiceSpeechEnded=false;
-          pendingVoiceTranscript="";
-          audioChunksThisTurn=0;
-
+          outputRow=null;outputText="";inputRow=null;activeVoiceTurnId=null;
           setState(null,listening?"Listening…":"Gemini Live · ready");
-          pujaDebugFinishTurn();
-          pujaDebugTurn=null;
+          pujaDebugFinishTurn();pujaDebugTurn=null;
         }
       };
 
@@ -711,9 +644,8 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
   async function groundVoiceTurnFromTranscript(value){
     const q=String(value||"").trim();
     if(!q||voiceGroundingSent||!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
+    activeVoiceTurnId=pujaDebugTurn?.id||("turn-"+Date.now());
     voiceGroundingSent=true;
-    suppressPlayback=true;
-    stopPlayback();
     try{
       const qctx=await getQuestionContext(q);
       if(pujaDebugTurn){
@@ -728,10 +660,9 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
         : (qctx.smallTalk
           ? ("This is a simple courtesy/greeting. Respond naturally as Puja without introducing unsupported factual claims.\n\nVISITOR: "+q)
           : ("REPHRASE BEFORE REFUSAL — The visitor's speech transcript may contain recognition errors. First silently rephrase the question to the closest meaning supported by the published Sage Harvest website context. Do not add or invent facts while rephrasing. If the published website still does not clearly answer the rephrased question, speak exactly: \""+noKnowledgeAnswer()+"\"\n\nVISITOR QUESTION: "+q+"\n\nLOCALLY REPAIRED QUESTION IF ANY: "+(qctx.rephrasedQuery||q)));
-      groundingInterruptExpected=true;
       socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:groundingText}]}],turnComplete:true}}));
       suppressPlayback=false;
-      pujaDebug("grounding_sent_playback_released",{turnId:pujaDebugTurn?.id});
+      pujaDebug("grounded_turn_sent",{turnId:activeVoiceTurnId});
       setState(null,"Puja is answering…");
     }catch(e){
       voiceGroundingSent=false;
@@ -806,113 +737,27 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
 
   async function startMicrophone(){
     if(listening)return;
+    const SpeechRecognitionClass=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SpeechRecognitionClass){addMessage("Voice input isn't supported in this browser. Please use the text box below.","bot");setState(null,"Puja · text input ready");return;}
     try{
-      if(!navigator.mediaDevices?.getUserMedia){
-        throw new Error("Microphone access is not supported by this browser.");
-      }
-
-      // Ask for the browser microphone permission first, then make sure
-      // Gemini Live is fully ready before any audio frames are produced.
-      microphoneStream=await navigator.mediaDevices.getUserMedia({
-        audio:{
-          channelCount:1,
-          echoCancellation:true,
-          noiseSuppression:true,
-          autoGainControl:true
-        }
-      });
-
-      await ensureSocket();
-
-      const AudioContextClass=window.AudioContext||window.webkitAudioContext;
-      if(!AudioContextClass)throw new Error("Microphone audio is not supported by this browser.");
-
-      microphoneContext=new AudioContextClass();
-      if(microphoneContext.state==="suspended")await microphoneContext.resume();
-
-      microphoneSource=microphoneContext.createMediaStreamSource(microphoneStream);
-      microphoneProcessor=microphoneContext.createScriptProcessor(4096,1,1);
-      const silentGain=microphoneContext.createGain();
-      silentGain.gain.value=0;
-
-      microphoneProcessor.onaudioprocess=event=>{
-        if(!listening||!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
-
-        const inputBuffer=event.inputBuffer.getChannelData(0);
-        const pcm16k=downsampleTo16k(inputBuffer,microphoneContext.sampleRate);
-        const data=floatTo16BitBase64(pcm16k);
-        if(!data)return;
-
-        try{
-          socket.send(JSON.stringify({
-            realtimeInput:{
-              audio:{
-                mimeType:"audio/pcm;rate=16000",
-                data
-              }
-            }
-          }));
-        }catch(e){
-          console.warn("Puja microphone audio could not be sent",e);
-        }
-      };
-
-      microphoneSource.connect(microphoneProcessor);
-      microphoneProcessor.connect(silentGain);
-      silentGain.connect(microphoneContext.destination);
-
-      listening=true;
-      voiceSpeechEnded=false;
-      if(socket&&socket.readyState===WebSocket.OPEN&&setupReady){
-        try{socket.send(JSON.stringify({realtimeInput:{activityStart:{}}}));}catch(_){}
-      }
-      pujaDebugNewTurn("voice");
-      voiceGroundingSent=false;
-      pendingVoiceTranscript="";
-      // Use the single Live turn for natural low-latency conversation.
-      mic?.classList.add("active");
-      mic?.setAttribute("aria-pressed","true");
-      setState("listening","Listening…");
-    }catch(e){
-      console.warn("Puja microphone could not start",e);
-      stopMicrophone();
-      setState(null,"Microphone unavailable");
-      addMessage(e?.message||"Microphone access is unavailable. Please check browser microphone permission.","bot");
-    }
+      await ensureSocket();await resumeOutput();
+      const recognition=new SpeechRecognitionClass();
+      recognition.continuous=false;recognition.interimResults=true;recognition.lang="en-US";recognition.maxAlternatives=1;
+      let finalTranscript="";
+      recognition.onstart=()=>{listening=true;finalTranscript="";mic?.classList.add("active");mic?.setAttribute("aria-pressed","true");setState("listening","Listening…");};
+      recognition.onresult=event=>{let interim="",finalText="";for(let i=event.resultIndex;i<event.results.length;i++){const result=event.results[i],text=result?.[0]?.transcript?.trim()||"";if(result.isFinal)finalText+=(finalText?" ":"")+text;else interim+=(interim?" ":"")+text;}if(finalText)finalTranscript=(finalTranscript+" "+finalText).trim();const display=(finalTranscript+" "+interim).trim();if(display){if(!inputRow)inputRow=addMessage(display,"user");else inputRow.textContent=display;}};
+      recognition.onerror=event=>{listening=false;if(event?.error!=="aborted")addMessage("I couldn't hear that clearly. Please try again or use the text box below.","bot");};
+      recognition.onend=async()=>{listening=false;mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");const transcript=finalTranscript.trim();if(transcript){try{await groundVoiceTurnFromTranscript(transcript);}catch(e){addMessage("Puja is temporarily unavailable. Please try again.","bot");}}else addMessage("I didn't quite catch that. Could you rephrase?","bot");};
+      recognition.start();window.__pujaSpeechRecognition=recognition;
+    }catch(e){listening=false;mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");addMessage("Voice input could not start in this browser. Please use the text box below.","bot");}
   }
 
   function stopMicrophone(){
-    const wasListening=listening;
     listening=false;
-    // Keep groundVoiceTurn and pendingVoiceTranscript alive until Gemini
-    // emits turnComplete; that is when the final transcript is grounded
-    // against the published Sage Harvest knowledge.
-    
-
-    // Automatic server VAD is disabled; explicitly close the user activity.
-    if(wasListening&&socket&&socket.readyState===WebSocket.OPEN&&setupReady){
-      voiceSpeechEnded=true;
-      if(!pujaDebugTurn)pujaDebugNewTurn("voice");
-      pujaDebugTurn.speechEndPerfMs=performance.now();
-      pujaDebug("speech_end",{turnId:pujaDebugTurn.id,reason:"activityEnd_sent",transcript:pujaDebugTurn.transcript});
-      try{
-        socket.send(JSON.stringify({realtimeInput:{activityEnd:{}}}));
-        scheduleVoiceGrounding("activity_end");
-      }catch(_){}
-    }
-
-    mic?.classList.remove("active");
-    mic?.setAttribute("aria-pressed","false");
-    try{microphoneProcessor?.disconnect();}catch(_){}
-    try{microphoneSource?.disconnect();}catch(_){}
-    try{microphoneStream?.getTracks().forEach(track=>track.stop());}catch(_){}
-    if(microphoneContext){
-      try{microphoneContext.close();}catch(_){}
-    }
-    microphoneProcessor=null;
-    microphoneSource=null;
-    microphoneStream=null;
-    microphoneContext=null;
+    const recognition=window.__pujaSpeechRecognition;
+    try{recognition?.stop();}catch(_){try{recognition?.abort();}catch(__){}}
+    window.__pujaSpeechRecognition=null;
+    mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
     setState(null,socket&&socket.readyState===WebSocket.OPEN?"Gemini Live · ready":"Puja · ready");
   }
 
