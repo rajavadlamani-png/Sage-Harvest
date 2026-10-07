@@ -1,5 +1,33 @@
 (() => {
   "use strict";
+  const PUJA_DEBUG = new URLSearchParams(window.location.search).get("pujadebug") === "1";
+  let pujaDebugSession = null;
+  let pujaDebugTurn = null;
+
+  function pujaDebug(event, data = {}) {
+    if (!PUJA_DEBUG) return;
+    const payload = { ts:new Date().toISOString(), perfMs:Math.round(performance.now()), event, ...data };
+    console.debug("[Puja Debug]", payload);
+    window.__pujaDebugSession = pujaDebugSession;
+    window.__pujaDebugTurns = window.__pujaDebugTurns || [];
+    if (pujaDebugTurn && !window.__pujaDebugTurns.includes(pujaDebugTurn)) window.__pujaDebugTurns.push(pujaDebugTurn);
+  }
+  function pujaDebugNewTurn(source) {
+    pujaDebugTurn = {id:"turn-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),source,startedAt:new Date().toISOString(),speechEndPerfMs:null,transcriptParts:[],transcript:"",route:"none",knowledgeEntries:0,knowledgeChars:0,knowledgeApproxTokens:0,matches:[],notFoundTriggered:false,notFoundReason:null,firstAudioPerfMs:null,playbackStartPerfMs:null,turnCompletePerfMs:null,generationCount:0,serverContentCount:0,outboundGenerations:0};
+    if (PUJA_DEBUG) { window.__pujaDebugTurns=window.__pujaDebugTurns||[]; window.__pujaDebugTurns.push(pujaDebugTurn); }
+    pujaDebug("turn_start",{turnId:pujaDebugTurn.id,source}); return pujaDebugTurn;
+  }
+  function pujaDebugKnowledge(entries,chars,route,matches=[]) {
+    if(!pujaDebugTurn)return;
+    pujaDebugTurn.knowledgeEntries=entries;pujaDebugTurn.knowledgeChars=chars;pujaDebugTurn.knowledgeApproxTokens=Math.round(chars/4);pujaDebugTurn.route=route;
+    pujaDebugTurn.matches=matches.map(e=>({id:e.id||null,page:e.page_title||null,url:e.url||null,score:typeof e._score==="number"?e._score:null}));
+    pujaDebug("knowledge_context",{turnId:pujaDebugTurn.id,route,entries,chars,approximateTokens:Math.round(chars/4),matches:pujaDebugTurn.matches});
+  }
+  function pujaDebugFinishTurn() {
+    if(!pujaDebugTurn)return;
+    const t=pujaDebugTurn;
+    pujaDebug("turn_summary",{turnId:t.id,transcript:t.transcript,route:t.route,knowledgeEntries:t.knowledgeEntries,knowledgeChars:t.knowledgeChars,approximateTokens:t.knowledgeApproxTokens,matches:t.matches,notFoundTriggered:t.notFoundTriggered,notFoundReason:t.notFoundReason,generationCount:t.generationCount,outboundGenerations:t.outboundGenerations,speechEndToFirstAudioMs:t.speechEndPerfMs!=null&&t.firstAudioPerfMs!=null?Math.round(t.firstAudioPerfMs-t.speechEndPerfMs):null,firstAudioToPlaybackStartMs:t.firstAudioPerfMs!=null&&t.playbackStartPerfMs!=null?Math.round(t.playbackStartPerfMs-t.firstAudioPerfMs):null,speechEndToTurnCompleteMs:t.speechEndPerfMs!=null&&t.turnCompletePerfMs!=null?Math.round(t.turnCompletePerfMs-t.speechEndPerfMs):null});
+  }
   const LIVE_TOKEN_URL = "https://sageharvest-puja.raja-vadlamani.workers.dev/live-token";
   const MODEL = "models/gemini-3.8-live";
   const VOICE = "Kore";
@@ -144,7 +172,10 @@ The published corpus that follows is authoritative for the current answer.`;
   }
   async function getCurrentKnowledgeInstruction(){
     await ensureKnowledge();
-    return SITE_KNOWLEDGE+"\n\nCURRENT PUBLISHED SITE KNOWLEDGE — THIS IS THE AUTHORITATIVE CURRENT SOURCE. For factual answers, use only this current published-site corpus. Do not use outside knowledge, assumptions or invented facts. If the current corpus does not clearly answer the visitor, say so and direct the visitor to contact.html.\n\n"+formatAllKnowledge();
+    const corpus=formatAllKnowledge();
+    pujaDebug("session_knowledge",{entries:knowledgeEntries.length,chars:corpus.length,approximateTokens:Math.round(corpus.length/4),truncated:false});
+    if(pujaDebugSession)pujaDebugSession.knowledge={entries:knowledgeEntries.length,chars:corpus.length,approximateTokens:Math.round(corpus.length/4),truncated:false};
+    return SITE_KNOWLEDGE+"\n\nCURRENT PUBLISHED SITE KNOWLEDGE — THIS IS THE AUTHORITATIVE CURRENT SOURCE. For factual answers, use only this current published-site corpus. Do not use outside knowledge, assumptions or invented facts. If the current corpus does not clearly answer the visitor, say so and direct the visitor to contact.html.\n\n"+corpus;
   }
   async function getQuestionContext(value){
     await ensureKnowledge();
@@ -228,7 +259,9 @@ The published corpus that follows is authoritative for the current answer.`;
     const buffer=outputContext.createBuffer(1,pcm.length,OUTPUT_RATE),channel=buffer.getChannelData(0);
     for(let i=0;i<pcm.length;i++)channel[i]=pcm[i]/32768;
     const source=outputContext.createBufferSource();source.buffer=buffer;source.connect(outputContext.destination);
-    nextPlayTime=Math.max(nextPlayTime,outputContext.currentTime+0.02);source.start(nextPlayTime);nextPlayTime+=buffer.duration;
+    nextPlayTime=Math.max(nextPlayTime,outputContext.currentTime+0.02);
+    if(pujaDebugTurn&&pujaDebugTurn.playbackStartPerfMs==null){pujaDebugTurn.playbackStartPerfMs=performance.now();pujaDebug("playback_start",{turnId:pujaDebugTurn.id});}
+    source.start(nextPlayTime);nextPlayTime+=buffer.duration;
     playbackSources.add(source);source.onended=()=>{playbackSources.delete(source);if(playbackSources.size===0&&!suppressPlayback){setState(null,listening?"Listening…":"Gemini Live · ready");}};setState("speaking","Puja is speaking · Gemini Live");
   }
   function stopPlayback(){
@@ -269,6 +302,7 @@ The published corpus that follows is authoritative for the current answer.`;
 
   async function ensureSocket(){
     await ensureKnowledge();
+    if(PUJA_DEBUG&&!pujaDebugSession){pujaDebugSession={startedAt:new Date().toISOString(),model:MODEL,voice:VOICE,route:"voice Live session corpus"};window.__pujaDebugSession=pujaDebugSession;pujaDebug("session_start",{model:MODEL,voice:VOICE});}
     if(socket&&socket.readyState===WebSocket.OPEN&&setupReady){
       return Promise.resolve();
     }
@@ -334,6 +368,8 @@ The published corpus that follows is authoritative for the current answer.`;
 
       ws.onopen=async()=>{
         if(socket!==ws)return;
+        pujaDebug("websocket_open");
+        pujaDebug("outbound_setup");
 
         ws.send(JSON.stringify({
           setup:{
@@ -424,6 +460,10 @@ The published corpus that follows is authoritative for the current answer.`;
           const t=s.inputTranscription.text.trim();
 
           if(t){
+            if(!pujaDebugTurn)pujaDebugNewTurn("voice");
+            pujaDebugTurn.transcriptParts.push(t);
+            pujaDebugTurn.transcript=pujaDebugTurn.transcriptParts.join(" ");
+            pujaDebug("input_transcription",{turnId:pujaDebugTurn.id,fragment:t,transcript:pujaDebugTurn.transcript});
             pendingVoiceTranscript=t;
             if(!inputRow){
               inputRow=addMessage(t,"user");
@@ -436,6 +476,10 @@ The published corpus that follows is authoritative for the current answer.`;
         }
 
         if(s.outputTranscription?.text){
+          if(!pujaDebugTurn)pujaDebugNewTurn("voice");
+          pujaDebug("output_transcription",{turnId:pujaDebugTurn.id,text:s.outputTranscription.text});
+          const lowerOutput=String(s.outputTranscription.text).toLowerCase();
+          if(lowerOutput.includes("not available in the published sage harvest website content")||lowerOutput.includes("please use the contact page")){pujaDebugTurn.notFoundTriggered=true;pujaDebugTurn.notFoundReason="model_output_contains_not_found_or_contact_phrase";}
           if(!outputRow){
             outputRow=addMessage("","bot");
           }
@@ -445,18 +489,25 @@ The published corpus that follows is authoritative for the current answer.`;
           messages.scrollTop=messages.scrollHeight;
         }
 
+        if(s.modelTurn?.parts?.length){
+          if(!pujaDebugTurn)pujaDebugNewTurn("voice");
+          pujaDebugTurn.serverContentCount++;pujaDebugTurn.generationCount++;
+          pujaDebug("model_generation",{turnId:pujaDebugTurn.id,generationCount:pujaDebugTurn.generationCount,partCount:s.modelTurn.parts.length});
+        }
         if(!suppressPlayback){
           for(const part of(s.modelTurn?.parts||[])){
             const inline=part?.inlineData||part?.inline_data;
 
             if(inline?.data){
               audioChunksThisTurn++;
+              if(pujaDebugTurn&&pujaDebugTurn.firstAudioPerfMs==null){pujaDebugTurn.firstAudioPerfMs=performance.now();pujaDebug("first_audio_chunk",{turnId:pujaDebugTurn.id,audioChunkNumber:audioChunksThisTurn});}
               await playPcm(inline.data);
             }
           }
         }
 
         if(s.turnComplete){
+          if(pujaDebugTurn){pujaDebugTurn.turnCompletePerfMs=performance.now();pujaDebug("turn_complete",{turnId:pujaDebugTurn.id,generationCount:pujaDebugTurn.generationCount,audioChunks:audioChunksThisTurn});}
           if(outputText && audioChunksThisTurn===0){
             console.warn("Puja Live: turn completed with transcription but no audio chunks received.");
           }
@@ -468,10 +519,9 @@ The published corpus that follows is authoritative for the current answer.`;
           suppressPlayback=false;
           audioChunksThisTurn=0;
 
-          setState(
-            null,
-            listening?"Listening…":"Gemini Live · ready"
-          );
+          setState(null,listening?"Listening…":"Gemini Live · ready");
+          pujaDebugFinishTurn();
+          pujaDebugTurn=null;
         }
       };
 
@@ -643,6 +693,7 @@ The published corpus that follows is authoritative for the current answer.`;
       silentGain.connect(microphoneContext.destination);
 
       listening=true;
+      pujaDebugNewTurn("voice");
       groundVoiceTurn=false;
       voiceGroundingSent=false;
       pendingVoiceTranscript="";
@@ -669,6 +720,9 @@ The published corpus that follows is authoritative for the current answer.`;
     // Explicitly close the current realtime audio turn so Gemini can finalize
     // the user's speech even when server-side VAD has not fired yet.
     if(wasListening&&socket&&socket.readyState===WebSocket.OPEN&&setupReady){
+      if(!pujaDebugTurn)pujaDebugNewTurn("voice");
+      pujaDebugTurn.speechEndPerfMs=performance.now();
+      pujaDebug("speech_end",{turnId:pujaDebugTurn.id,reason:"audioStreamEnd_sent",transcript:pujaDebugTurn.transcript});
       try{
         socket.send(JSON.stringify({realtimeInput:{audioStreamEnd:true}}));
       }catch(_){}
@@ -728,6 +782,7 @@ The published corpus that follows is authoritative for the current answer.`;
     }
   }
   window.addEventListener("puja:open",openPanel);
+  pujaDebug("diagnostics_loaded",{enabled:PUJA_DEBUG,debugUrl:PUJA_DEBUG?window.location.href:null});
   window.addEventListener("puja:close",closePanel);
   mic?.addEventListener("click",toggleMicrophone);
   stopBtn?.addEventListener("click",()=>{if(voiceMuted){voiceMuted=false;try{sessionStorage.removeItem("pujaVoiceMuted");}catch(_){}stopBtn.textContent="Stop voice";setState(null,"Voice enabled · ready");}else stopTalking();});
