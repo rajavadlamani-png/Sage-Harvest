@@ -3,14 +3,14 @@
   if (document.getElementById("pujaWidget")) return;
   const markup = `
   <div class="puja-widget" id="pujaWidget" aria-label="Puja AI Assistant">
-    <button class="puja-launcher" id="pujaLauncher" type="button" aria-label="Open Puja assistant" aria-expanded="false">
-      <span class="puja-avatar-mini" id="pujaMiniAvatar"><img class="puja-avatar-image" src="/Sage-Harvest/assets/img/puja-avatar-reference.jpg?v=20261007-avatar2" alt="Puja, Sage Harvest virtual agent" style="display:block!important;visibility:visible!important;opacity:1!important;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 48%;border-radius:50%;z-index:2"></span>
+    <button class="puja-launcher" id="pujaLauncher" type="button" aria-label="Open Puja assistant" aria-expanded="false" aria-controls="pujaPanel">
+      <span class="puja-avatar-mini" id="pujaMiniAvatar"><img class="puja-avatar-image" src="assets/img/puja-avatar-reference.jpg?v=20261007-avatar2" alt="Puja, Sage Harvest virtual agent"></span>
       <span class="puja-launcher-label">Ask Puja</span>
     </button>
-    <section class="puja-panel" id="pujaPanel" aria-hidden="true">
+    <section class="puja-panel" id="pujaPanel" aria-hidden="true" inert>
       <header class="puja-header">
         <div class="puja-identity">
-          <div class="puja-avatar" id="pujaAvatar" aria-hidden="true"><span class="puja-avatar-ring"></span><img class="puja-avatar-image" src="/Sage-Harvest/assets/img/puja-avatar-reference.jpg?v=20261007-avatar2" alt="Puja, Sage Harvest virtual agent" style="display:block!important;visibility:visible!important;opacity:1!important;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 48%;border-radius:50%;z-index:2"></div>
+          <div class="puja-avatar" id="pujaAvatar" aria-hidden="true"><span class="puja-avatar-ring"></span><img class="puja-avatar-image" src="assets/img/puja-avatar-reference.jpg?v=20261007-avatar2" alt="Puja, Sage Harvest virtual agent"></div>
           <div><strong>Puja</strong><span id="pujaStatus">Sage Harvest Guide</span></div>
         </div>
         <button class="puja-close" id="pujaClose" type="button" aria-label="Close Puja">×</button>
@@ -34,7 +34,7 @@
   </div>`;
   document.body.insertAdjacentHTML("beforeend", markup);
   const script = document.createElement("script");
-  script.src = "/Sage-Harvest/puja-live-20261006-v3.js?v=20261007-knowledge4";
+  script.src = "puja-live-20261006-v3.js?v=20261007-site-audit1";
   script.defer = true;
   document.body.appendChild(script);
 })();
