@@ -14,6 +14,26 @@
       panel.setAttribute("aria-hidden", "false");
       launcher.setAttribute("aria-expanded", "true");
       window.dispatchEvent(new CustomEvent("puja:open"));
+      window.clearTimeout(window.__pujaReadyTimer);
+      window.__pujaReadyTimer = window.setTimeout(() => {
+        if (!window.PujaLiveReady && panel.classList.contains("open")) {
+          const messages = document.getElementById("pujaMessages");
+          const status = document.getElementById("pujaStatus");
+          if (status) status.textContent = "Puja · voice unavailable";
+          if (messages && !messages.querySelector("[data-puja-system-error]")) {
+            const row = document.createElement("div");
+            row.className = "puja-message puja-message-bot";
+            row.setAttribute("data-puja-system-error", "true");
+            const body = document.createElement("div");
+            body.className = "puja-message-content";
+            body.textContent = "Puja voice is temporarily unavailable. Please try again in a moment.";
+            row.appendChild(body);
+            messages.appendChild(row);
+            messages.scrollTop = messages.scrollHeight;
+          }
+          console.error("Puja Live did not become ready after the panel opened.");
+        }
+      }, 8000);
     } catch (error) {
       console.error("Puja UI open error", error);
     }
