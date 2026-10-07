@@ -63,13 +63,12 @@ VOICE TRANSCRIPTION CLARIFICATION:
 - If the visitor clearly identifies a person named Cary, retain that meaning instead.
 
 ANSWERING PRIORITY:
-- For any factual question about Sage Harvest, the website, its services, careers/collaboration, founder, commencement date, fees, capabilities, pages, examples, or other published content, ALWAYS use the search_website_knowledge tool before answering.
-- Do not answer factual website questions from model knowledge or from remembered facts in the system instruction.
-- The tool result is the authoritative source for that turn.
-- If the tool returns matching entries, answer only from those entries and keep the answer concise.
-- If the tool returns no matching entries, speak exactly the existing not-found response.
-- If the visitor asks a follow-up, search again for the follow-up rather than relying on the previous answer.
-- Greetings and simple courtesy may be answered naturally without the tool.
+- For any factual question about Sage Harvest, the website, its services, careers/collaboration, founder, commencement date, fees, capabilities, pages, examples, or other published content, answer ONLY from the published Sage Harvest grounding context supplied with that turn.
+- Do not answer factual website questions from model knowledge, general Gemini knowledge, assumptions or remembered facts.
+- The grounding context supplied with the turn is authoritative for that turn.
+- If the grounding context says the published site does not clearly answer the question, speak exactly the existing not-found response.
+- If the visitor asks a follow-up, use the new grounding context supplied for that follow-up.
+- Greetings and simple courtesy may be answered naturally.
 
 The locally loaded published Sage Harvest knowledge is the only factual website source.`;
 
@@ -196,7 +195,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
     const corpus=formatAllKnowledge();
     pujaDebug("local_knowledge_loaded",{entries:knowledgeEntries.length,chars:corpus.length,approximateTokens:Math.round(corpus.length/4),truncated:false});
     if(pujaDebugSession)pujaDebugSession.localKnowledge={entries:knowledgeEntries.length,chars:corpus.length,approximateTokens:Math.round(corpus.length/4),truncated:false};
-    return SITE_KNOWLEDGE+"\n\nLIVE VOICE GROUNDING POLICY — The published Sage Harvest knowledge is loaded locally in the browser and is accessed through the search_website_knowledge tool. For factual website questions, use that tool before answering. The tool returns only published Sage Harvest entries matched to the visitor's question. Use only those returned entries for factual content. Do not use outside knowledge, assumptions or invented facts. If the tool reports that no published entries clearly answer the question, speak exactly this response: \"I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\" Do not invent vacancies, clients, results, fees, offices, commitments or dates. For greetings and simple courtesy, respond naturally without calling the tool.";
+    return SITE_KNOWLEDGE+"\n\nLIVE VOICE GROUNDING POLICY — The published Sage Harvest knowledge is loaded locally in the browser and is used to prepare turn-specific grounding context. Use only that grounding context for factual content. Do not use outside knowledge, assumptions or invented facts. If the tool reports that no published entries clearly answer the question, speak exactly this response: \"I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\" Do not invent vacancies, clients, results, fees, offices, commitments or dates. For greetings and simple courtesy, respond naturally without calling the tool.";
   }
   async function getQuestionContext(value){
     await ensureKnowledge();
@@ -406,71 +405,12 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
                 }
               }
             },
-            tools:[{
-              functionDeclarations:[{
-                name:"search_website_knowledge",
-                description:"Search the locally loaded published Sage Harvest website knowledge for the visitor's current factual question. This is the authoritative website source; do not use outside knowledge.",
-                behavior:"BLOCKING",
-                parameters:{
-                  type:"OBJECT",
-                  properties:{
-                    query:{
-                      type:"STRING",
-                      description:"The visitor's current question or the clearest concise form of the question to search."
-                    }
-                  },
-                  required:["query"]
-                }
-              }]
-            }],
             inputAudioTranscription:{},
             outputAudioTranscription:{},
             sessionResumption:{}
           }
         }));
       };
-
-      function executeWebsiteKnowledgeTool(args){
-        const query=String(args?.query||"").trim();
-        if(!query){
-          return {
-            found:false,
-            answerPolicy:"Speak exactly: \"I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\""
-          };
-        }
-        const routed=routedKnowledge(query);
-        const matches=routed.length?routed:matchKnowledge(query);
-        const route=routed.length?"routed":"keyword";
-        if(pujaDebugTurn){
-          pujaDebugTurn.transcript=pujaDebugTurn.transcript||query;
-          pujaDebugKnowledge(knowledgeEntries.length,formatAllKnowledge().length,route,matches);
-          pujaDebug("knowledge_tool_call",{turnId:pujaDebugTurn.id,query,route,matchCount:matches.length});
-          pujaDebugRenderVoiceState();
-        }
-        if(!matches.length){
-          if(pujaDebugTurn){
-            pujaDebugTurn.notFoundTriggered=true;
-            pujaDebugTurn.notFoundReason="local_knowledge_tool_returned_no_matches";
-          }
-          return {
-            found:false,
-            query,
-            answerPolicy:"No published Sage Harvest entry clearly answers this question. Speak exactly: \"I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\""
-          };
-        }
-        return {
-          found:true,
-          query,
-          answerPolicy:"Answer only from the published entries below. Do not add outside facts, assumptions or invented details.",
-          entries:matches.map(e=>({
-            id:e.id||null,
-            page_title:e.page_title||"",
-            section_heading:e.section_heading||"",
-            url:e.url||"",
-            text:e.text||""
-          }))
-        };
-      }
 
       ws.onmessage=async event=>{
         if(socket!==ws)return;
@@ -492,55 +432,6 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
         }
 
         console.debug("Puja Live message",m);
-
-        if(m.toolCall?.functionCalls?.length){
-          if(!pujaDebugTurn)pujaDebugNewTurn("voice");
-          setState(null,"Puja is checking the Sage Harvest website…");
-          try{
-            await ensureKnowledge();
-            const functionResponses=[];
-            for(const fc of m.toolCall.functionCalls){
-              if(fc.name!=="search_website_knowledge"){
-                functionResponses.push({
-                  name:fc.name,
-                  id:fc.id,
-                  response:{
-                    error:"Unknown tool. Do not answer from outside knowledge."
-                  }
-                });
-                continue;
-              }
-              const result=executeWebsiteKnowledgeTool(fc.args||{});
-              functionResponses.push({
-                name:fc.name,
-                id:fc.id,
-                response:{result}
-              });
-            }
-            if(socket===ws&&ws.readyState===WebSocket.OPEN){
-              ws.send(JSON.stringify({toolResponse:{functionResponses}}));
-              pujaDebug("knowledge_tool_response",{turnId:pujaDebugTurn?.id,functionCount:functionResponses.length});
-            }
-          }catch(e){
-            console.warn("Puja website knowledge tool failed",e);
-            if(socket===ws&&ws.readyState===WebSocket.OPEN){
-              ws.send(JSON.stringify({
-                toolResponse:{
-                  functionResponses:(m.toolCall.functionCalls||[]).map(fc=>({
-                    name:fc.name,
-                    id:fc.id,
-                    response:{
-                      result:{
-                        found:false,
-                        answerPolicy:"The local published Sage Harvest knowledge could not be searched. Speak exactly: \"I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\""
-                      }
-                    }
-                  }))
-                }
-              }));
-            }
-          }
-        }
 
         if(m.setupComplete){
           clearTimeout(timeout);
@@ -609,11 +500,14 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
               inputRow.textContent=t;
             }
 
-
+            if(!voiceGroundingSent){
+              Promise.resolve().then(()=>groundVoiceTurnFromTranscript(pujaDebugTurn?.transcript||pendingVoiceTranscript));
+            }
           }
         }
 
         if(s.outputTranscription?.text){
+          if(!voiceGroundingSent)return;
           if(!pujaDebugTurn)pujaDebugNewTurn("voice");
           pujaDebug("output_transcription",{turnId:pujaDebugTurn.id,text:s.outputTranscription.text});
           const lowerOutput=String(s.outputTranscription.text).toLowerCase();
@@ -632,7 +526,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
           pujaDebugTurn.serverContentCount++;pujaDebugTurn.generationCount++;
           pujaDebug("model_generation",{turnId:pujaDebugTurn.id,generationCount:pujaDebugTurn.generationCount,partCount:s.modelTurn.parts.length});
         }
-        if(!suppressPlayback){
+        if(!suppressPlayback&&voiceGroundingSent){
           for(const part of(s.modelTurn?.parts||[])){
             const inline=part?.inlineData||part?.inline_data;
 
@@ -655,6 +549,8 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
           outputText="";
           inputRow=null;
           suppressPlayback=false;
+          voiceGroundingSent=false;
+          pendingVoiceTranscript="";
           audioChunksThisTurn=0;
 
           setState(null,listening?"Listening…":"Gemini Live · ready");
@@ -707,6 +603,35 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
       }
       throw e;
     });
+  }
+
+  async function groundVoiceTurnFromTranscript(value){
+    const q=String(value||"").trim();
+    if(!q||voiceGroundingSent||!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
+    voiceGroundingSent=true;
+    suppressPlayback=true;
+    stopPlayback();
+    try{
+      const qctx=await getQuestionContext(q);
+      if(pujaDebugTurn){
+        const routeMatches=qctx.matches||[];
+        pujaDebugKnowledge(knowledgeEntries.length,formatAllKnowledge().length,
+          routeMatches.length?(routedKnowledge(q).length?"routed":"keyword"):"none",routeMatches);
+        pujaDebug("voice_grounding_send",{turnId:pujaDebugTurn.id,transcript:q,matchCount:routeMatches.length,smallTalk:!!qctx.smallTalk});
+        pujaDebugRenderVoiceState();
+      }
+      const groundingText=qctx.matches.length
+        ? ("GROUNDING INSTRUCTIONS — Answer the visitor using ONLY the published Sage Harvest entries below. Do not use outside knowledge, assumptions or invented details. Answer naturally and concisely.\n\n"+qctx.context+"\n\nVISITOR QUESTION: "+q)
+        : (qctx.smallTalk
+          ? ("This is a simple courtesy/greeting. Respond naturally as Puja without introducing unsupported factual claims.\n\nVISITOR: "+q)
+          : ("The published Sage Harvest website knowledge does not clearly answer this question. Speak exactly: \""+noKnowledgeAnswer()+"\"\n\nVISITOR QUESTION: "+q));
+      socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:groundingText}]}],turnComplete:true}}));
+      setState(null,"Puja is checking the Sage Harvest website…");
+    }catch(e){
+      voiceGroundingSent=false;
+      suppressPlayback=false;
+      console.warn("Puja deterministic voice grounding failed",e);
+    }
   }
 
   async function sendGroundedVoiceTurn(value){
@@ -832,7 +757,6 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
 
       listening=true;
       pujaDebugNewTurn("voice");
-      groundVoiceTurn=false;
       voiceGroundingSent=false;
       pendingVoiceTranscript="";
       // Use the single Live turn for natural low-latency conversation.
