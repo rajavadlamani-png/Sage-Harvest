@@ -679,16 +679,38 @@
   }
 
   function toggleMicrophone(){primeAudio();if(listening)stopMicrophone();else startMicrophone();}
-  function openPanel(){
-    primeAudio();
-    voiceMuted=false;
-    try{sessionStorage.removeItem("pujaVoiceMuted");}catch(_){}
-    if(stopBtn)stopBtn.textContent="Stop voice";
-    panel.inert=false;panel.classList.add("open");suppressPlayback=false;panel.setAttribute("aria-hidden","false");launcher.setAttribute("aria-expanded","true");closedByUser=false;
-    ensureSocket().catch(e=>{console.warn("Puja Live connection unavailable",e);setState(null,"Compatible voice mode available");});
+  async function openPanel(){
+    try{
+      primeAudio();
+      voiceMuted=false;
+      try{sessionStorage.removeItem("pujaVoiceMuted");}catch(_){}
+      if(stopBtn)stopBtn.textContent="Stop voice";
+      closedByUser=false;
+      setState(null,"Starting Puja…");
+      await ensureSocket();
+    }catch(e){
+      console.error("Puja session start failed",e);
+      addMessage("Puja is temporarily unavailable. Please try again in a moment.","bot");
+      setState(null,"Puja · unavailable");
+    }
   }
-  function closePanel(){stopMicrophone();stopPlayback();panel.classList.remove("open");panel.setAttribute("aria-hidden","true");panel.inert=true;launcher.setAttribute("aria-expanded","false");closedByUser=true;launcher.focus();if(socket)try{socket.close();}catch(_){}socket=null;setupReady=false;connecting=false;suppressPlayback=false;}
-  launcher.addEventListener("click",openPanel);close?.addEventListener("click",closePanel);mic?.addEventListener("click",toggleMicrophone);
+  function closePanel(){
+    try{
+      stopMicrophone();
+      stopPlayback();
+      closedByUser=true;
+      if(socket)try{socket.close();}catch(_){}
+      socket=null;
+      setupReady=false;
+      connecting=false;
+      suppressPlayback=false;
+    }catch(e){
+      console.error("Puja session close failed",e);
+    }
+  }
+  window.addEventListener("puja:open",openPanel);
+  window.addEventListener("puja:close",closePanel);
+  mic?.addEventListener("click",toggleMicrophone);
   stopBtn?.addEventListener("click",()=>{if(voiceMuted){voiceMuted=false;try{sessionStorage.removeItem("pujaVoiceMuted");}catch(_){}stopBtn.textContent="Stop voice";setState(null,"Voice enabled · ready");}else stopTalking();});
   form.addEventListener("submit",e=>{e.preventDefault();const t=input.value.trim();input.value="";if(t)sendTextTurn(t);});
   document.querySelectorAll("[data-puja-question]").forEach(b=>b.addEventListener("click",()=>sendTextTurn(b.getAttribute("data-puja-question")||"")));
