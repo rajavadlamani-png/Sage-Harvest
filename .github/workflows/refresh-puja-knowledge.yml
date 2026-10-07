@@ -2,10 +2,7 @@ name: Refresh Puja knowledge
 
 on:
   push:
-    paths:
-      - "*.html"
-      - "**/*.html"
-      - "scripts/build-puja-knowledge.mjs"
+  workflow_dispatch:
 
 permissions:
   contents: write
