@@ -379,7 +379,7 @@
     addMessage(value,"user");
     try{
       await ensureSocket();await resumeOutput();inputRow=null;
-      socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:value}]}],turnComplete:true}}));
+      socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:"Use the following authoritative Sage Harvest website knowledge to answer the visitor. Treat it as the source of truth; do not invent vacancies, clients, results, fees or commitments.\\n\\n"+SITE_KNOWLEDGE+"\\n\\nVisitor question: "+value}]}],turnComplete:true}}));
       setState(null,"Puja is thinking…");
     }catch(e){
       console.warn("Puja Live unavailable; trying compatible text mode",e);
