@@ -4,6 +4,39 @@
   const MODEL = "models/gemini-3.8-live";
   const VOICE = "Kore";
   const SITE_KNOWLEDGE = "You are Puja, the AI guide for Sage Harvest Agro Pvt. Limited. Be warm, professional, concise and specific. Use the following as the authoritative website knowledge. Answer the question asked rather than reciting the whole site. When useful, point visitors to the exact page paths listed below. Do not invent clients, fees, vacancies, results, credentials, guarantees, email addresses, phone numbers, office locations or commitments. Clearly distinguish stated facts from proposed plans and illustrative case perspectives. If the website does not answer a question, say so and direct the visitor to contact.html.\n\nFIRM IDENTITY AND PURPOSE\nSage Harvest Agro Pvt. Limited is an independent, practitioner-led advisory practice focused on seed and agri-business supply chains, transformation and practical decision support. Tagline: “Seed Supply Chain. Reimagined.” Purpose: Make complexity actionable. Vision: A stronger, more resilient seed ecosystem. Mission: Bring strategy closer to execution. The firm connects field realities, operating experience, data and management decisions. Its website is currently informational and for prospective enquiries; consulting engagements are stated to commence on 1 April 2027. Do not imply that a formal engagement has already begun.\n\nFOUNDER\nRaja Vadlamani is Founder & Principal Advisor, bringing nearly four decades of experience across the seed and agri-business ecosystem. His experience includes supply-chain leadership and work across seed production, processing, quality, warehousing, inventory, transformation and strategic initiatives. Career experience includes Corteva, Advanta, Shriram Bioseed and SeedWorks International. He brings an operating-practitioner perspective, digital and AI innovation interests, sustainability experience and a governance perspective. See founder.html and about.html.\n\nHOMEPAGE AND GLOBAL AMBITION\nThe homepage introduces the seed supply-chain advisory proposition, then the “Regional insight. Global connections.” / Global Ambition section, followed by service areas. Sage Harvest has an international ambition based on regionally anchored relationships and trusted partners. Important: these are proposed focus regions and a proposed coordination model, not claims of established offices or existing local teams.\n• North America: United States; proposed coordination from Silicon Valley, California.\n• Asia: India as the core anchor, with the Philippines and Indonesia as focus markets.\n• Europe/Eurasia: Turkey as a potential gateway for relationships and cross-border agribusiness.\n• Africa: Kenya as a proposed regional anchor for seed-sector development, food security, agricultural trade and investment.\nSee international-expansion.html#global-network. Do not describe any proposed regional anchor as an existing office.\n\nSERVICES AND WHAT THEY INCLUDE\n1. Seed Supply Chain Strategy: end-to-end supply-chain design and strategy; production planning; processing; seed quality; storage and inventory; distribution; operating models; capacity and infrastructure planning; performance improvement.\n2. Digital & AI: forecasting and predictive analytics; satellite/geospatial and weather intelligence; decision support; conversational planning concepts; digital traceability; data architecture; practical AI validation. The approach starts with the business decision, identifies suitable data, tests analytical methods and integrates useful outputs into actual workflows. See digital-ai.html.\n3. Sustainability & Climate: climate resilience; water, energy and resource efficiency; lower-emission production; sustainability reviews; carbon opportunity assessment; measurement, reporting and verification (MRV) readiness. Any carbon/MRV approach must align with applicable methodologies and independent validation. See sustainability.html.\n4. International Expansion & Trade: market and export readiness; market-entry strategy; partner and buyer facilitation; cross-border supply chains; commercial negotiation support; India–Africa opportunities. Do not promise a buyer, partner, export approval or commercial result. See international-expansion.html.\n5. M&A Supply Chain Due Diligence: operating model; production and processing infrastructure; capacity; inventory and working capital; quality and traceability; supplier and operational risk; sustainability exposure; synergies, integration and post-deal improvement opportunities. See ma-due-diligence.html.\n6. Strategic & Leadership Advisory: independent practitioner perspective for CXOs, boards, investors and leadership teams on supply-chain transformation and decisions.\nMain services overview: services.html.\n\nENGAGEMENT MODELS AND FEES\nThe Services page includes “Flexible engagements. Clear commercial terms.” It describes six possible models: Strategic Advisory Retainers; Project-Based Consulting; Independent Assessments; Digital & Sustainability Programs; International Business Development; Scope & Commercial Alignment. Fees are not published as a fixed public rate card. Commercial terms are tailored transparently to the scope, deliverables, duration, complexity and specialist involvement, and are shared directly in a proposal after the need is understood. Never invent or estimate prices. The website says consulting engagements commence 1 April 2027. For enquiries, direct visitors to contact.html.\n\nHOW AN ENGAGEMENT STARTS\nA visitor can share a brief description of the challenge, explain the context and desired outcome, and then explore a suitable scope, deliverables and timeline. The website invites prospective enquiries; an initial enquiry does not itself establish a client relationship or comprehensive confidentiality obligations. Visitors should not send confidential or commercially sensitive information in an initial enquiry or to Puja. Direct formal enquiries to contact.html.\n\nSAGE HARVEST LABS\nlabs.html is a working space for research, analytical models, digital concepts and practical tools. Topics include Forecasting & Decision Intelligence; Satellite Data Intelligence; Climate Assessment & MRV Tools; Data Architecture & Decision Systems; greenfield seed infrastructure and operating models; the developing Rice Seed Climate Ledger concept; and the Seed Industry Carbon Reduction Calculator. The Rice Seed Climate Ledger is a developing concept for capturing emissions-related activities and climate-reduction interventions in rice seed production. Do not present concepts or tools as completed commercial products unless the site explicitly says so. See labs.html.\n\nCASE PERSPECTIVES\ncase-studies.html presents selected themes and anonymised or illustrative perspectives, not necessarily disclosed client engagements. Themes include:\n• Cotton Hybrid Quality Risk: lot-level data, Chi-square testing and two-proportion comparisons can help assess whether failures are disproportionately concentrated in a production or genetic segment and focus root-cause investigation. This is an illustrative/anonymised perspective, not a claim about a named client.\n• Greenfield seed infrastructure and operating models: capacity planning, site and infrastructure requirements, process design, equipment evaluation, storage strategy and implementation readiness.\n• Demand forecasting and supply-chain planning: use of historical demand, geography, product/hybrid characteristics, seasonality and contextual variables; compare models and evaluate forecast performance.\n• Supply-chain data architecture, satellite data acquisition and interpretation, climate assessment and decision tools, due diligence, cross-border market facilitation and digital visibility.\nNever represent these examples as verified client case studies or promise results. See case-studies.html.\n\nINSIGHTS AND PUBLISHED PERSPECTIVES\ninsights.html is a knowledge hub for articles and perspectives by Raja Vadlamani on seed supply-chain strategy, data, AI, climate resilience, digital traceability, satellite intelligence and global opportunity. Listed topics include Effective Seed Supply Chain Strategies; The Data Enigma in Seed Supply Chains; From Fields to Foresight; The AI Race Will Be Won in Fields, Not Server Rooms; From Compliance to Intelligence: The Next Evolution of SATHI; Beyond the QR Code: The Granular Reality of SATHI 2.0; satellite imagery and seed fields; satellite data interpretation; MRV and verified outcomes; “Carbon Credits Are Coming to the Farm Gate — Is Anyone Actually Ready?”; “The Netherlands Fits Inside Telangana”; and technology and Indian cotton. Some original articles may be hosted on LinkedIn. See insights.html.\n\nCAREERS AND COLLABORATION\ncareers.html invites experienced professionals, specialist advisors and strategic partners to express interest. Possible pathways include Associate Consultants in seed production/supply chain, processing/quality/operations, procurement/warehousing/logistics and performance improvement; subject-matter experts in AI/analytics/digital agriculture, sustainability/climate/carbon MRV, seed quality/traceability/assurance and M&A due diligence/risk; and strategic partners such as consulting firms, research or academic institutions, agritech providers and international trade/market partners. The process is to share expertise and interests, explore fit/scope/availability if relevant, and agree terms. This is not a promise of a current job opening or guaranteed assignment. See careers.html.\n\nPROFESSIONAL STANDARDS, CONFIDENTIALITY AND PRIVACY\nSage Harvest aims for independent, evidence-led recommendations, professional judgement, transparent treatment of uncertainty, identification and appropriate management of conflicts, and respect for client responsibility in decision-making. No commercial, financial, operational, investment or other outcomes are guaranteed. Assignment scope, responsibilities, deliverables, confidentiality arrangements and fees are established in engagement documentation. Website information is general and not a substitute for engagement-specific professional, legal, financial, tax or regulated advice. See professional-standards.html.\nDo not ask visitors to disclose confidential, commercially sensitive, personal, privileged or restricted information to Puja. An initial enquiry does not by itself establish a formal client relationship or comprehensive confidentiality obligation. See confidentiality.html.\nPuja is an AI-assisted guide; answers may be incomplete, inaccurate or not current and are not professional or regulated advice. Puja uses a Sage Harvest-controlled Cloudflare Worker for a short-lived access token and Google's Gemini Live service for voice interaction. Availability may depend on connectivity, browser permissions, third-party service availability and usage limits. Do not promise uninterrupted operation. See ai-puja.html and privacy.html.\n\nCONTACT ROUTING\nFor questions about services, transformation, Digital & AI, sustainability, M&A due diligence, international expansion/trade, strategic leadership advisory or a possible collaboration, direct the visitor to contact.html (“Talk to Us”). The normal first step is to understand the challenge and context before discussing a proposed scope, deliverables and timeline. Do not invent email addresses, phone numbers, prices or response-time promises.\n\nPAGE DIRECTORY\nHomepage: index.html\nAbout: about.html\nFounder: founder.html\nServices and engagement model: services.html\nGlobal network / international expansion and trade: international-expansion.html\nDigital & AI: digital-ai.html\nSustainability & Climate: sustainability.html\nM&A Supply Chain Due Diligence: ma-due-diligence.html\nSage Harvest Labs: labs.html\nCase Perspectives: case-studies.html\nInsights: insights.html\nCareers & Collaboration: careers.html\nTalk to Us: contact.html\nProfessional Standards & Independence: professional-standards.html\nConfidentiality: confidentiality.html\nPrivacy Policy: privacy.html\nAI & Puja Notice: ai-puja.html";
+
+  const KNOWLEDGE_URL = "assets/data/puja-knowledge.json";
+  let knowledgeEntries = [];
+  let knowledgePromise = null;
+  function normalizeKnowledgeText(value){return String(value||"").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9\s-]/g," ").replace(/\s+/g," ").trim();}
+  function stemKnowledgeToken(token){const t=String(token||"");if(t.length<=4)return t;if(t.endsWith("ies"))return t.slice(0,-3)+"y";if(t.endsWith("es"))return t.slice(0,-2);if(t.endsWith("s"))return t.slice(0,-1);return t;}
+  async function ensureKnowledge(){
+    if(knowledgeEntries.length)return knowledgeEntries;
+    if(knowledgePromise)return knowledgePromise;
+    knowledgePromise=fetch(new URL(KNOWLEDGE_URL,document.baseURI).href,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("Puja website knowledge could not be loaded.");return r.json();}).then(d=>{if(!d||!Array.isArray(d.entries)||!d.entries.length)throw new Error("Puja website knowledge is empty.");knowledgeEntries=d.entries;return knowledgeEntries;}).catch(e=>{knowledgePromise=null;throw e;});
+    return knowledgePromise;
+  }
+  function isGreetingOrCourtesy(value){const q=normalizeKnowledgeText(value);return /^(hi|hello|hey|good morning|good afternoon|good evening|thanks|thank you|thank you puja|who are you|what is your name|how are you|nice to meet you)[!?.,\s]*$/i.test(q);}
+  function matchKnowledge(value){
+    const q=normalizeKnowledgeText(value);if(!q)return [];
+    const qTokens=new Set(q.split(/\s+/).map(stemKnowledgeToken).filter(t=>t.length>2));
+    return knowledgeEntries.map(entry=>{
+      const hay=normalizeKnowledgeText([entry.page_title,entry.section_heading,entry.text,...(entry.keywords||[]),...(entry.synonyms||[])].join(" "));
+      let score=0;
+      for(const phrase of (entry.synonyms||[])){const p=normalizeKnowledgeText(phrase);if(p&&q.includes(p))score+=8;}
+      const heading=normalizeKnowledgeText(entry.section_heading||"");if(heading&&q.includes(heading))score+=10;
+      const page=normalizeKnowledgeText(entry.page_title||"");if(page&&q.includes(page))score+=8;
+      for(const token of hay.split(/\s+/).map(stemKnowledgeToken)){if(qTokens.has(token))score+=1;}
+      return {...entry,_score:score};
+    }).filter(e=>e._score>=3).sort((a,b)=>b._score-a._score).slice(0,8);
+  }
+  function formatMatchedKnowledge(matches){return matches.map((e,i)=>"SOURCE "+(i+1)+"\nPAGE TITLE: "+e.page_title+"\nSECTION: "+e.section_heading+"\nSOURCE URL: "+e.url+"\nPUBLISHED TEXT: "+e.text).join("\n\n");}
+  function formatAllKnowledge(){return knowledgeEntries.map(e=>"PAGE TITLE: "+e.page_title+"\nSECTION: "+e.section_heading+"\nSOURCE URL: "+e.url+"\nPUBLISHED TEXT: "+e.text).join("\n\n");}
+  function noKnowledgeAnswer(){return "I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.";}
+  function addKnowledgeLinks(matches){const seen=new Set();for(const e of matches.slice(0,2)){if(!e.url||seen.has(e.url))continue;seen.add(e.url);const wrap=document.createElement("div");wrap.className="puja-navigation-link";const a=document.createElement("a");a.className="puja-inline-link";a.href=e.url;a.textContent="Learn more: "+e.page_title+" →";wrap.appendChild(a);messages.appendChild(wrap);}messages.scrollTop=messages.scrollHeight;}
+  async function getCurrentKnowledgeInstruction(){await ensureKnowledge();return SITE_KNOWLEDGE+"\n\nCURRENT PUBLISHED SITE KNOWLEDGE — THIS IS THE AUTHORITATIVE CURRENT SOURCE. For factual answers, use only this current published-site corpus. Do not use outside knowledge, assumptions or invented facts. If the current corpus does not clearly answer the visitor, say so and direct the visitor to contact.html.\n\n"+formatAllKnowledge();}
+  async function getQuestionContext(value){await ensureKnowledge();if(isGreetingOrCourtesy(value))return {matches:[],context:SITE_KNOWLEDGE,smallTalk:true};const matches=matchKnowledge(value);if(!matches.length)return {matches,context:"",smallTalk:false};return {matches,context:SITE_KNOWLEDGE+"\n\nCURRENT MATCHED PUBLISHED SITE ENTRIES — USE ONLY THESE ENTRIES FOR FACTUAL CONTENT IN THIS ANSWER. Do not use outside knowledge or any factual detail not supported by these entries. If these entries do not clearly answer the question, say so and direct the visitor to contact.html.\n\n"+formatMatchedKnowledge(matches),smallTalk:false};}
+
   const INPUT_RATE = 16000, OUTPUT_RATE = 24000;
   const $ = id => document.getElementById(id);
   const panel=$("pujaPanel"), launcher=$("pujaLauncher"), close=$("pujaClose"), form=$("pujaForm"),
@@ -72,12 +105,15 @@
     }catch(e){console.warn("Puja browser speech fallback failed",e);}
   }
   async function sendFallbackText(value){
+    const qctx=await getQuestionContext(value);
+    if(!qctx.smallTalk&&!qctx.matches.length){addMessage(noKnowledgeAnswer(),"bot");setState(null,"Text voice mode · ready");return;}
     const response=await fetch("https://sageharvest-puja.raja-vadlamani.workers.dev/",{
-      method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:"Answer the visitor using this official Sage Harvest website knowledge. Treat it as the source of truth; do not invent vacancies, clients, outcomes or terms.\n\n"+SITE_KNOWLEDGE+"\n\nVisitor question: "+value})
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:"Answer the visitor using the following authoritative Sage Harvest website knowledge. Preserve the existing Puja persona and guardrails. For factual content, use only the current matched published-site entries supplied for this turn. If they do not clearly answer the question, say so and direct the visitor to contact.html. Do not invent vacancies, clients, outcomes, fees or commitments.\n\n"+qctx.context+"\n\nVisitor question: "+value})
     });
     const data=await response.json();
     if(!response.ok||!data.answer)throw new Error(data.error||"Puja could not answer right now. Please try again.");
-    addMessage(data.answer,"bot");addLink(data.answer);speakFallback(data.answer);
+    addMessage(data.answer,"bot");addKnowledgeLinks(qctx.matches);addLink(data.answer);speakFallback(data.answer);
     setState(null,"Text voice mode · ready");
   }
   async function playPcm(b64){
@@ -125,7 +161,8 @@
     }
   }
 
-  function ensureSocket(){
+  async function ensureSocket(){
+    await ensureKnowledge();
     if(socket&&socket.readyState===WebSocket.OPEN&&setupReady){
       return Promise.resolve();
     }
@@ -195,7 +232,7 @@
         ws.send(JSON.stringify({
           setup:{
             model:MODEL,
-            systemInstruction:{parts:[{text:SITE_KNOWLEDGE}]},
+            systemInstruction:{parts:[{text:await getCurrentKnowledgeInstruction()}]},
             generationConfig:{
               responseModalities:["AUDIO"],
               speechConfig:{
@@ -378,50 +415,19 @@
     const value=String(text||"").trim();if(!value)return;
     addMessage(value,"user");
     try{
+      const qctx=await getQuestionContext(value);
+      if(!qctx.smallTalk&&!qctx.matches.length){addMessage(noKnowledgeAnswer(),"bot");setState(null,"Puja · ready");return;}
       await ensureSocket();await resumeOutput();inputRow=null;
-      socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:"Use the following authoritative Sage Harvest website knowledge to answer the visitor. Treat it as the source of truth; do not invent vacancies, clients, results, fees or commitments.\\n\\n"+SITE_KNOWLEDGE+"\\n\\nVisitor question: "+value}]}],turnComplete:true}}));
+      socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:"Answer the visitor using the authoritative Sage Harvest website knowledge already supplied in the live session. For factual content, use only the current matched published-site entries below. Preserve the existing Puja persona and guardrails. If the supplied entries do not clearly answer the question, say so and direct the visitor to contact.html. Do not invent vacancies, clients, results, fees or commitments.\n\n"+qctx.context+"\n\nVisitor question: "+value}]}],turnComplete:true}}));
       setState(null,"Puja is thinking…");
     }catch(e){
       console.warn("Puja Live unavailable; trying compatible text mode",e);
       setState(null,"Switching to compatible voice mode…");
       try{await sendFallbackText(value);}
-      catch(fallbackError){addMessage(fallbackError.message||"Puja is temporarily unavailable. Please try again.","bot");setState(null,"Puja · unavailable");}
+      catch(fallbackError){addMessage(fallbackError.message||"Puja is temporarily unavailable. Please try again.", "bot");setState(null,"Puja · unavailable");}
     }
   }
-  function stopTalking(){
-    voiceMuted=true;
-    try{sessionStorage.setItem("pujaVoiceMuted","true");}catch(_){}
-    suppressPlayback=true;
-    stopPlayback();
-    if("speechSynthesis" in window)try{window.speechSynthesis.cancel();}catch(_){}
-    if(stopBtn)stopBtn.textContent="Enable voice";
-    if(socket&&socket.readyState===WebSocket.OPEN)try{socket.send(JSON.stringify({clientContent:{turnComplete:true}}));}catch(_){}
-    setState(null,"Voice off · text still available");
-  }
-  function downsample(data,inputRate){
-    if(inputRate===INPUT_RATE)return data;const ratio=inputRate/INPUT_RATE,newLength=Math.round(data.length/ratio),out=new Float32Array(newLength);let offset=0;
-    for(let i=0;i<newLength;i++){const next=Math.min(data.length,Math.round((i+1)*ratio));let sum=0,count=0;for(let j=offset;j<next;j++){sum+=data[j];count++;}out[i]=count?sum/count:0;offset=next;}return out;
-  }
-  function pcm16(data){const p=new Int16Array(data.length);for(let i=0;i<data.length;i++){const s=Math.max(-1,Math.min(1,data[i]));p[i]=s<0?s*32768:s*32767;}return p;}
-  function b64(bytes){let bin="";for(let i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode(...bytes.subarray(i,Math.min(i+0x8000,bytes.length)));return btoa(bin);}
-  async function startMicrophone(){
-    try{
-      await ensureSocket();if(!navigator.mediaDevices?.getUserMedia)throw new Error("Microphone access is not available in this browser.");
-      await resumeOutput();microphoneStream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-      microphoneContext=new(window.AudioContext||window.webkitAudioContext)();await microphoneContext.resume();
-      microphoneSource=microphoneContext.createMediaStreamSource(microphoneStream);microphoneProcessor=microphoneContext.createScriptProcessor(4096,1,1);
-      microphoneProcessor.onaudioprocess=e=>{if(!listening||!socket||socket.readyState!==WebSocket.OPEN)return;const d=downsample(e.inputBuffer.getChannelData(0),microphoneContext.sampleRate),p=pcm16(d);socket.send(JSON.stringify({realtimeInput:{audio:{data:b64(new Uint8Array(p.buffer)),mimeType:"audio/pcm;rate=16000"}}}));};
-      microphoneSource.connect(microphoneProcessor);microphoneProcessor.connect(microphoneContext.destination);listening=true;mic?.classList.add("active");mic?.setAttribute("aria-pressed","true");setState("listening","Listening…");
-    }catch(e){stopMicrophone();addMessage(e.message||"Microphone access could not be started.","bot");setState(null,"Gemini Live · ready");}
-  }
-  function stopMicrophone(){
-    listening=false;mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
-    try{if(socket&&socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({realtimeInput:{audioStreamEnd:true}}));}catch(_){}
-    try{microphoneProcessor?.disconnect();}catch(_){}try{microphoneSource?.disconnect();}catch(_){}try{microphoneContext?.close();}catch(_){}
-    microphoneProcessor=null;microphoneSource=null;microphoneContext=null;
-    if(microphoneStream){for(const t of microphoneStream.getTracks())t.stop();microphoneStream=null;}
-    setState(null,"Gemini Live · ready");
-  }
+
   function toggleMicrophone(){primeAudio();if(listening)stopMicrophone();else startMicrophone();}
   function openPanel(){
     primeAudio();
