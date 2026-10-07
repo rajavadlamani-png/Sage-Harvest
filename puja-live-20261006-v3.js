@@ -281,6 +281,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
 
   let socket=null, setupReady=false, connecting=false, suppressPlayback=false, activeVoiceTurnId=null, sessionResumptionHandle=null;
   let voiceMuted=false;
+  let voiceRecognition=null, voiceRecognitionWanted=false, voiceRecognitionStarting=false;
   try{voiceMuted=sessionStorage.getItem("pujaVoiceMuted")==="true";}catch(_){}
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0, playbackQueue=Promise.resolve(), playbackGeneration=0;
   let responsePending=false, responseSerial=0, lastVoiceTranscript="", lastVoiceTranscriptPerfMs=0;
