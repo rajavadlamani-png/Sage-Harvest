@@ -283,6 +283,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   let voiceMuted=false;
   try{voiceMuted=sessionStorage.getItem("pujaVoiceMuted")==="true";}catch(_){}
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0, playbackQueue=Promise.resolve(), playbackGeneration=0;
+  let responsePending=false, responseSerial=0, lastVoiceTranscript="", lastVoiceTranscriptPerfMs=0;
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
   let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
   let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="", voiceSpeechEnded=false, voiceGroundingTimer=null, groundingInterruptExpected=false;
@@ -548,6 +549,13 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         const s=m.serverContent;
         if(!s)return;
 
+        // A Gemini Live turn is single-owner: after turnComplete, late server frames
+        // from that completed generation must never start a second spoken answer.
+        if(!responsePending && (s.modelTurn?.parts?.length || s.outputTranscription?.text)){
+          pujaDebug("late_generation_ignored",{responseSerial});
+          return;
+        }
+
         if(s.interrupted){
           stopPlayback();
           if(activeVoiceTurnId&&pujaDebugTurn?.id===activeVoiceTurnId)pujaDebug("grounded_turn_interrupted",{turnId:activeVoiceTurnId});
@@ -584,6 +592,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         }
 
         if(s.turnComplete){
+          responsePending=false;
           if(activeVoiceTurnId){
             if(!pujaDebugTurn||pujaDebugTurn.id!==activeVoiceTurnId){
               pujaDebug("late_turn_complete_ignored",{turnId:activeVoiceTurnId||null});
@@ -671,6 +680,17 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   async function groundVoiceTurnFromTranscript(value){
     const q=String(value||"").trim();
     if(!q||!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
+    const now=performance.now();
+    if(q===lastVoiceTranscript&&now-lastVoiceTranscriptPerfMs<2500){
+      pujaDebug("duplicate_voice_transcript_ignored",{transcript:q});
+      return;
+    }
+    if(responsePending){
+      pujaDebug("voice_turn_ignored_while_response_pending",{transcript:q,responseSerial});
+      return;
+    }
+    lastVoiceTranscript=q;lastVoiceTranscriptPerfMs=now;
+    responsePending=true;responseSerial++;
     const turn=pujaDebugNewTurn("voice");
     activeVoiceTurnId=turn.id;
     turn.speechEndPerfMs=turn.speechEndPerfMs??performance.now();
@@ -693,9 +713,10 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
           : ("REPHRASE BEFORE REFUSAL — The visitor's speech transcript may contain recognition errors. First silently rephrase the question to the closest meaning supported by the published Sage Harvest website context. Do not add or invent facts while rephrasing. If the published website still does not clearly answer the rephrased question, speak exactly: \""+noKnowledgeAnswer()+"\"\n\nVISITOR QUESTION: "+q+"\n\nLOCALLY REPAIRED QUESTION IF ANY: "+(qctx.rephrasedQuery||q)));
       socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:groundingText}]}],turnComplete:true}}));
       suppressPlayback=false;
-      pujaDebug("grounded_turn_sent",{turnId:activeVoiceTurnId});
+      pujaDebug("grounded_turn_sent",{turnId:activeVoiceTurnId,responseSerial});
       setState(null,"Puja is answering…");
     }catch(e){
+      responsePending=false;
       suppressPlayback=false;
       console.warn("Puja deterministic voice grounding failed",e);
     }
@@ -712,6 +733,8 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
 
     await ensureSocket();
     await resumeOutput();
+    if(responsePending)return;
+    responsePending=true;responseSerial++;
     suppressPlayback=false;
     socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:"Answer the visitor using ONLY the authoritative published Sage Harvest website knowledge supplied below. This is the grounded voice-answer turn. Do not use outside knowledge, assumptions or general Gemini knowledge. Preserve the existing Puja persona and guardrails. If the supplied website entries do not clearly answer the question, say so and direct the visitor to contact.html. Do not invent vacancies, clients, results, fees, offices, commitments or dates.\n\n"+qctx.context+"\n\nVisitor question: "+value}]}],turnComplete:true}}));
     setState(null,"Puja is thinking…");
@@ -724,6 +747,8 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       const qctx=await getQuestionContext(value);
       if(!qctx.smallTalk&&!qctx.matches.length){addMessage(noKnowledgeAnswer(),"bot");setState(null,"Puja · ready");return;}
       await ensureSocket();await resumeOutput();inputRow=null;
+      if(responsePending)return;
+      responsePending=true;responseSerial++;
       socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:"Answer the visitor using the authoritative Sage Harvest website knowledge already supplied in the live session. For factual content, use only the current matched published-site entries below. Preserve the existing Puja persona and guardrails. If the supplied entries do not clearly answer the question, say so and direct the visitor to contact.html. Do not invent vacancies, clients, results, fees or commitments.\n\n"+qctx.context+"\n\nVisitor question: "+value}]}],turnComplete:true}}));
       setState(null,"Puja is thinking…");
     }catch(e){
