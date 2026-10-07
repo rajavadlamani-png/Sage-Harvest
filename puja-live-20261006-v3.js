@@ -40,7 +40,7 @@
     }
     const t=pujaDebugTurn;
     const matchText=t.matches?.length?t.matches.map(m=>m.id||m.page||"match").join(", "):"NONE";
-    box.textContent="PUJA DEBUG (only with ?pujadebug=1)\nTranscript: "+(t.transcript||"(none yet)")+"\nRoute: "+(t.route||"none")+"\nKnowledge matches: "+matchText+"\nKnowledge entries: "+t.knowledgeEntries+" | chars: "+t.knowledgeChars;
+    box.textContent="PUJA DEBUG (only with ?pujadebug=1)\nTranscript: "+(t.transcript||"(none yet)")+"\nRoute: "+(t.route||"none")+"\nKnowledge matches: "+matchText+"\nKnowledge entries: "+t.knowledgeEntries+" | chars: "+t.knowledgeChars+"\nSpeech→first audio: "+(t.speechEndPerfMs!=null&&t.firstAudioPerfMs!=null?Math.round(t.firstAudioPerfMs-t.speechEndPerfMs)+" ms":"not measured yet");
   }
   const LIVE_TOKEN_URL = "https://sageharvest-puja.raja-vadlamani.workers.dev/live-token";
   const MODEL = "models/gemini-3.8-live";
@@ -139,6 +139,65 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
       .map(e=>({...e,_score:100}));
   }
 
+  function levenshteinDistance(a,b){
+    const aa=String(a||""),bb=String(b||"");
+    if(aa===bb)return 0;
+    if(!aa.length)return bb.length;
+    if(!bb.length)return aa.length;
+    let prev=Array.from({length:bb.length+1},(_,i)=>i);
+    for(let i=1;i<=aa.length;i++){
+      const cur=[i];
+      for(let j=1;j<=bb.length;j++)cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(aa[i-1]===bb[j-1]?0:1));
+      prev=cur;
+    }
+    return prev[bb.length];
+  }
+  function fuzzySimilarity(a,b){
+    const aa=normalizeKnowledgeText(a),bb=normalizeKnowledgeText(b);
+    if(!aa||!bb)return 0;
+    return 1-(levenshteinDistance(aa,bb)/Math.max(aa.length,bb.length));
+  }
+  function repairSpeechQuery(value){
+    let q=String(value||"").trim();
+    if(!q)return {query:"",changes:[]};
+    const changes=[];
+    const replacements=[
+      [/\bmay know\b/ig,"tell me"],
+      [/\bcan know\b/ig,"tell me"],
+      [/\bme know about\b/ig,"tell me about"]
+    ];
+    for(const [pattern,replacement] of replacements){
+      if(pattern.test(q)){q=q.replace(pattern,replacement);changes.push(replacement);}
+    }
+    const nq=normalizeKnowledgeText(q);
+    if(/career|collaboration|associate consultant|subject matter|strategic partner/.test(nq)&&/caristix|carriest|carear|cary\b/.test(nq)){
+      q=q.replace(/\bcaristix\b/ig,"careers").replace(/\bcarriest\b/ig,"careers").replace(/\bcarear\b/ig,"career");
+      changes.push("careers");
+    }
+    return {query:q,changes};
+  }
+  function fuzzyKnowledgeMatches(value){
+    const q=normalizeKnowledgeText(value);if(!q)return [];
+    const qTokens=q.split(/\s+/).filter(t=>t.length>2);
+    return knowledgeEntries.map(entry=>{
+      const fields=[
+        normalizeKnowledgeText(entry.page_title||""),
+        normalizeKnowledgeText(entry.section_heading||""),
+        ...(entry.keywords||[]).map(normalizeKnowledgeText),
+        ...(entry.synonyms||[]).map(normalizeKnowledgeText)
+      ].filter(Boolean);
+      let best=0;
+      for(const field of fields){
+        const words=field.split(/\s+/).filter(w=>w.length>2);
+        for(const qt of qTokens)for(const w of words){
+          const sim=fuzzySimilarity(qt,w);
+          if(sim>=0.72)best=Math.max(best,sim);
+        }
+      }
+      return {...entry,_score:best*8};
+    }).filter(e=>e._score>=5.75).sort((a,b)=>b._score-a._score).slice(0,6);
+  }
+
   function matchKnowledge(value){
     const q=normalizeKnowledgeText(value);if(!q)return [];
     const rawTokens=q.split(/\s+/).filter(t=>t.length>2);
@@ -170,6 +229,8 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
         if(forms.some(f=>qTokens.has(f)))tokenHits++;
       }
       score+=Math.min(tokenHits*1.5,12);
+      const fuzzyFields=[...heading.split(/\s+/),...page.split(/\s+/),...keywords.flatMap(x=>x.split(/\s+/)),...synonyms.flatMap(x=>x.split(/\s+/))].filter(w=>w.length>2);
+      for(const qt of rawTokens)if(fuzzyFields.some(w=>fuzzySimilarity(qt,w)>=0.78))score+=3.5;
       return {...entry,_score:score};
     }).filter(e=>e._score>=5).sort((a,b)=>b._score-a._score).slice(0,6);
   }
@@ -199,11 +260,21 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
   }
   async function getQuestionContext(value){
     await ensureKnowledge();
-    if(isGreetingOrCourtesy(value))return {matches:[],context:SITE_KNOWLEDGE,smallTalk:true};
-    const routed=routedKnowledge(value);
-    const matches=routed.length?routed:matchKnowledge(value);
-    if(!matches.length)return {matches,context:"",smallTalk:false};
-    return {matches,context:SITE_KNOWLEDGE+"\n\nCURRENT MATCHED PUBLISHED SITE ENTRIES — USE ONLY THESE ENTRIES FOR FACTUAL CONTENT IN THIS ANSWER. Do not use outside knowledge or any factual detail not supported by these entries. If these entries do not clearly answer the question, say so and direct the visitor to contact.html.\n\n"+formatMatchedKnowledge(matches),smallTalk:false};
+    if(isGreetingOrCourtesy(value))return {matches:[],context:SITE_KNOWLEDGE,smallTalk:true,rephrasedQuery:String(value||"")};
+    const repaired=repairSpeechQuery(value);
+    const candidates=[String(value||""),repaired.query].filter((v,i,a)=>v&&a.indexOf(v)===i);
+    let matches=[];let usedQuery=String(value||"");
+    for(const candidate of candidates){
+      const routed=routedKnowledge(candidate);
+      const found=routed.length?routed:matchKnowledge(candidate);
+      if(found.length){matches=found;usedQuery=candidate;break;}
+    }
+    if(!matches.length){
+      matches=fuzzyKnowledgeMatches(repaired.query);
+      if(matches.length)usedQuery=repaired.query;
+    }
+    if(!matches.length)return {matches,context:"",smallTalk:false,rephrasedQuery:usedQuery,repairChanges:repaired.changes};
+    return {matches,context:SITE_KNOWLEDGE+"\n\nCURRENT MATCHED PUBLISHED SITE ENTRIES — USE ONLY THESE ENTRIES FOR FACTUAL CONTENT IN THIS ANSWER. Do not use outside knowledge or any factual detail not supported by these entries. If these entries do not clearly answer the question, say so and direct the visitor to contact.html.\n\n"+formatMatchedKnowledge(matches),smallTalk:false,rephrasedQuery:usedQuery,repairChanges:repaired.changes};
   }
 
   const INPUT_RATE = 16000, OUTPUT_RATE = 24000;
@@ -219,7 +290,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0;
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
   let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
-  let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="", voiceGroundingSent=false;
+  let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="", voiceGroundingSent=false, voiceSpeechEnded=false;
 
   function setState(state,label){
     avatar?.classList.remove("speaking","listening"); mini?.classList.remove("speaking","listening");
@@ -322,7 +393,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
 
   async function ensureSocket(){
     await ensureKnowledge();
-    if(PUJA_DEBUG&&!pujaDebugSession){pujaDebugSession={startedAt:new Date().toISOString(),model:MODEL,voice:VOICE,route:"voice Live local knowledge tool"};window.__pujaDebugSession=pujaDebugSession;pujaDebug("session_start",{model:MODEL,voice:VOICE});}
+    if(PUJA_DEBUG&&!pujaDebugSession){pujaDebugSession={startedAt:new Date().toISOString(),model:MODEL,voice:VOICE,route:"voice Live deterministic local grounding"};window.__pujaDebugSession=pujaDebugSession;pujaDebug("session_start",{model:MODEL,voice:VOICE});}
     if(socket&&socket.readyState===WebSocket.OPEN&&setupReady){
       return Promise.resolve();
     }
@@ -403,6 +474,11 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
                     voiceName:VOICE
                   }
                 }
+              }
+            },
+            realtimeInputConfig:{
+              automaticActivityDetection:{
+                disabled:true
               }
             },
             inputAudioTranscription:{},
@@ -500,7 +576,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
               inputRow.textContent=t;
             }
 
-            if(!voiceGroundingSent){
+            if(voiceSpeechEnded&&!voiceGroundingSent){
               Promise.resolve().then(()=>groundVoiceTurnFromTranscript(pujaDebugTurn?.transcript||pendingVoiceTranscript));
             }
           }
@@ -550,6 +626,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
           inputRow=null;
           suppressPlayback=false;
           voiceGroundingSent=false;
+          voiceSpeechEnded=false;
           pendingVoiceTranscript="";
           audioChunksThisTurn=0;
 
@@ -621,7 +698,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
         pujaDebugRenderVoiceState();
       }
       const groundingText=qctx.matches.length
-        ? ("GROUNDING INSTRUCTIONS — Answer the visitor using ONLY the published Sage Harvest entries below. Do not use outside knowledge, assumptions or invented details. Answer naturally and concisely.\n\n"+qctx.context+"\n\nVISITOR QUESTION: "+q)
+        ? ("GROUNDING INSTRUCTIONS — Answer the visitor using ONLY the supplied published Sage Harvest entries below. Do not add, infer, assume or invent any factual detail that is not present in those entries. If the wording appears to contain a speech-recognition error, silently rephrase the visitor's question to the closest meaning supported by the supplied entries before answering. Do not introduce facts during rephrasing. Answer naturally and concisely.\n\n"+qctx.context+"\n\nVISITOR QUESTION: "+q+"\n\nNORMALIZED QUESTION IF NEEDED: "+(qctx.rephrasedQuery||q))
         : (qctx.smallTalk
           ? ("This is a simple courtesy/greeting. Respond naturally as Puja without introducing unsupported factual claims.\n\nVISITOR: "+q)
           : ("The published Sage Harvest website knowledge does not clearly answer this question. Speak exactly: \""+noKnowledgeAnswer()+"\"\n\nVISITOR QUESTION: "+q));
@@ -756,6 +833,10 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
       silentGain.connect(microphoneContext.destination);
 
       listening=true;
+      voiceSpeechEnded=false;
+      if(socket&&socket.readyState===WebSocket.OPEN&&setupReady){
+        try{socket.send(JSON.stringify({realtimeInput:{activityStart:{}}}));}catch(_){}
+      }
       pujaDebugNewTurn("voice");
       voiceGroundingSent=false;
       pendingVoiceTranscript="";
@@ -779,14 +860,14 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
     // against the published Sage Harvest knowledge.
     
 
-    // Explicitly close the current realtime audio turn so Gemini can finalize
-    // the user's speech even when server-side VAD has not fired yet.
+    // Automatic server VAD is disabled; explicitly close the user activity.
     if(wasListening&&socket&&socket.readyState===WebSocket.OPEN&&setupReady){
+      voiceSpeechEnded=true;
       if(!pujaDebugTurn)pujaDebugNewTurn("voice");
       pujaDebugTurn.speechEndPerfMs=performance.now();
-      pujaDebug("speech_end",{turnId:pujaDebugTurn.id,reason:"audioStreamEnd_sent",transcript:pujaDebugTurn.transcript});
+      pujaDebug("speech_end",{turnId:pujaDebugTurn.id,reason:"activityEnd_sent",transcript:pujaDebugTurn.transcript});
       try{
-        socket.send(JSON.stringify({realtimeInput:{audioStreamEnd:true}}));
+        socket.send(JSON.stringify({realtimeInput:{activityEnd:{}}}));
       }catch(_){}
     }
 
