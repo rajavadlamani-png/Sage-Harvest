@@ -226,9 +226,9 @@ The published corpus that follows is authoritative for the current answer.`;
   async function getCurrentKnowledgeInstruction(){
     await ensureKnowledge();
     const corpus=formatAllKnowledge();
-    pujaDebug("session_knowledge",{entries:knowledgeEntries.length,chars:corpus.length,approximateTokens:Math.round(corpus.length/4),truncated:false});
-    if(pujaDebugSession)pujaDebugSession.knowledge={entries:knowledgeEntries.length,chars:corpus.length,approximateTokens:Math.round(corpus.length/4),truncated:false};
-    return SITE_KNOWLEDGE+"\n\nCURRENT PUBLISHED SITE KNOWLEDGE — THIS IS THE AUTHORITATIVE CURRENT SOURCE. For factual answers, use only this current published-site corpus. Do not use outside knowledge, assumptions or invented facts. If the current corpus does not clearly answer the visitor, say so and direct the visitor to contact.html.\n\n"+corpus;
+    pujaDebug("local_knowledge_loaded",{entries:knowledgeEntries.length,chars:corpus.length,approximateTokens:Math.round(corpus.length/4),truncated:false});
+    if(pujaDebugSession)pujaDebugSession.localKnowledge={entries:knowledgeEntries.length,chars:corpus.length,approximateTokens:Math.round(corpus.length/4),truncated:false};
+    return SITE_KNOWLEDGE+"\n\nLIVE VOICE GROUNDING POLICY — The published Sage Harvest knowledge is loaded locally in the browser and is accessed through the search_website_knowledge tool. For factual website questions, use that tool before answering. The tool returns only published Sage Harvest entries matched to the visitor's question. Use only those returned entries for factual content. Do not use outside knowledge, assumptions or invented facts. If the tool reports that no published entries clearly answer the question, speak exactly this response: \"I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\" Do not invent vacancies, clients, results, fees, offices, commitments or dates. For greetings and simple courtesy, respond naturally without calling the tool.";
   }
   async function getQuestionContext(value){
     await ensureKnowledge();
@@ -355,7 +355,7 @@ The published corpus that follows is authoritative for the current answer.`;
 
   async function ensureSocket(){
     await ensureKnowledge();
-    if(PUJA_DEBUG&&!pujaDebugSession){pujaDebugSession={startedAt:new Date().toISOString(),model:MODEL,voice:VOICE,route:"voice Live session corpus"};window.__pujaDebugSession=pujaDebugSession;pujaDebug("session_start",{model:MODEL,voice:VOICE});}
+    if(PUJA_DEBUG&&!pujaDebugSession){pujaDebugSession={startedAt:new Date().toISOString(),model:MODEL,voice:VOICE,route:"voice Live local knowledge tool"};window.__pujaDebugSession=pujaDebugSession;pujaDebug("session_start",{model:MODEL,voice:VOICE});}
     if(socket&&socket.readyState===WebSocket.OPEN&&setupReady){
       return Promise.resolve();
     }
@@ -437,12 +437,71 @@ The published corpus that follows is authoritative for the current answer.`;
                   }
                 }
               }
-            },            inputAudioTranscription:{},
+            },
+            tools:[{
+              functionDeclarations:[{
+                name:"search_website_knowledge",
+                description:"Search the locally loaded published Sage Harvest website knowledge for the visitor's current factual question. This is the authoritative website source; do not use outside knowledge.",
+                parameters:{
+                  type:"OBJECT",
+                  properties:{
+                    query:{
+                      type:"STRING",
+                      description:"The visitor's current question or the clearest concise form of the question to search."
+                    }
+                  },
+                  required:["query"]
+                }
+              }]
+            }],
+            inputAudioTranscription:{},
             outputAudioTranscription:{},
             sessionResumption:{}
           }
         }));
       };
+
+      function executeWebsiteKnowledgeTool(args){
+        const query=String(args?.query||"").trim();
+        if(!query){
+          return {
+            found:false,
+            answerPolicy:"Speak exactly: \"I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\""
+          };
+        }
+        const routed=routedKnowledge(query);
+        const matches=routed.length?routed:matchKnowledge(query);
+        const route=routed.length?"routed":"keyword";
+        if(pujaDebugTurn){
+          pujaDebugTurn.transcript=pujaDebugTurn.transcript||query;
+          pujaDebugKnowledge(knowledgeEntries.length,formatAllKnowledge().length,route,matches);
+          pujaDebug("knowledge_tool_call",{turnId:pujaDebugTurn.id,query,route,matchCount:matches.length});
+          pujaDebugRenderVoiceState();
+        }
+        if(!matches.length){
+          if(pujaDebugTurn){
+            pujaDebugTurn.notFoundTriggered=true;
+            pujaDebugTurn.notFoundReason="local_knowledge_tool_returned_no_matches";
+          }
+          return {
+            found:false,
+            query,
+            answerPolicy:"No published Sage Harvest entry clearly answers this question. Speak exactly: \"I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\""
+          };
+        }
+        return {
+          found:true,
+          query,
+          answerPolicy:"Answer only from the published entries below. Do not add outside facts, assumptions or invented details.",
+          entries:matches.map(e=>({
+            id:e.id||null,
+            page_title:e.page_title||"",
+            section_heading:e.section_heading||"",
+            url:e.url||"",
+            text:e.text||""
+          }))
+        };
+      }
 
       ws.onmessage=async event=>{
         if(socket!==ws)return;
@@ -464,6 +523,55 @@ The published corpus that follows is authoritative for the current answer.`;
         }
 
         console.debug("Puja Live message",m);
+
+        if(m.toolCall?.functionCalls?.length){
+          if(!pujaDebugTurn)pujaDebugNewTurn("voice");
+          setState(null,"Puja is checking the Sage Harvest website…");
+          try{
+            await ensureKnowledge();
+            const functionResponses=[];
+            for(const fc of m.toolCall.functionCalls){
+              if(fc.name!=="search_website_knowledge"){
+                functionResponses.push({
+                  name:fc.name,
+                  id:fc.id,
+                  response:{
+                    error:"Unknown tool. Do not answer from outside knowledge."
+                  }
+                });
+                continue;
+              }
+              const result=executeWebsiteKnowledgeTool(fc.args||{});
+              functionResponses.push({
+                name:fc.name,
+                id:fc.id,
+                response:{result}
+              });
+            }
+            if(socket===ws&&ws.readyState===WebSocket.OPEN){
+              ws.send(JSON.stringify({toolResponse:{functionResponses}}));
+              pujaDebug("knowledge_tool_response",{turnId:pujaDebugTurn?.id,functionCount:functionResponses.length});
+            }
+          }catch(e){
+            console.warn("Puja website knowledge tool failed",e);
+            if(socket===ws&&ws.readyState===WebSocket.OPEN){
+              ws.send(JSON.stringify({
+                toolResponse:{
+                  functionResponses:(m.toolCall.functionCalls||[]).map(fc=>({
+                    name:fc.name,
+                    id:fc.id,
+                    response:{
+                      result:{
+                        found:false,
+                        answerPolicy:"The local published Sage Harvest knowledge could not be searched. Speak exactly: \"I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\""
+                      }
+                    }
+                  }))
+                }
+              }));
+            }
+          }
+        }
 
         if(m.setupComplete){
           clearTimeout(timeout);
