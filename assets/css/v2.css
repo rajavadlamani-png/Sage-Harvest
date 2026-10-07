@@ -404,3 +404,65 @@ main>.compact-services.section article a{display:inline-block;margin-top:8px;fon
   .verification-section.section{grid-template-columns:1fr;gap:26px}
   .verification-visual{aspect-ratio:1705 / 900;min-height:0}
 }
+
+
+/* Hero-only agricultural background slideshow */
+.hero-refined{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  background:#172f23!important;
+}
+.hero-refined .hero-slideshow{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+.hero-refined .hero-slide{
+  position:absolute;
+  inset:-2%;
+  opacity:0;
+  transform:scale(1.035);
+  background-position:center;
+  background-size:cover;
+  background-repeat:no-repeat;
+  transition:opacity 1.5s ease-in-out,transform 7.5s ease-out;
+  will-change:opacity,transform;
+}
+.hero-refined .hero-slide.is-active{
+  opacity:1;
+  transform:scale(1.0);
+}
+.hero-refined .hero-slide-one{background-image:url('../img/sage-harvest-home-banner.png')}
+.hero-refined .hero-slide-two{background-image:url('../img/verification-first.png')}
+.hero-refined .hero-slide-three{background-image:url('../img/seed-chain-diagram.svg')}
+.hero-refined .hero-slideshow-shade{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,rgba(9,30,21,.82) 0%,rgba(9,30,21,.64) 48%,rgba(9,30,21,.38) 100%),linear-gradient(0deg,rgba(7,24,17,.32),rgba(7,24,17,.12));
+}
+.hero-refined .hero-copy,
+.hero-refined .hero-image-panel{
+  position:relative;
+  z-index:2;
+}
+.hero-refined .hero-copy .eyebrow{color:#e6c77e}
+.hero-refined h1{color:#fff}
+.hero-refined .lead{color:rgba(255,255,255,.9)}
+.hero-refined .hero-proof{color:rgba(255,255,255,.78)}
+.hero-refined .text-link{color:#fff}
+.hero-refined .hero-image-panel{
+  background:rgba(248,247,238,.10)!important;
+  border-color:rgba(255,255,255,.22)!important;
+  box-shadow:0 24px 65px rgba(0,0,0,.2)!important;
+  backdrop-filter:blur(3px);
+}
+.hero-refined .hero-image-panel .hero-art-seed{max-width:100%!important}
+@media(max-width:900px){
+  .hero-refined .hero-slideshow-shade{background:linear-gradient(180deg,rgba(9,30,21,.77),rgba(9,30,21,.60))}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-refined .hero-slide{transition:none;transform:none}
+}
