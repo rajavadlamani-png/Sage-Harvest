@@ -792,6 +792,8 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     return result;
   }
 
+  let voiceRecognition=null, voiceRecognitionWanted=false, voiceRecognitionStarting=false, voiceFinalizationTimer=null;
+
   async function startMicrophone(){
     if(listening||voiceRecognitionStarting)return;
     const SpeechRecognitionClass=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -799,64 +801,112 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     try{
       await ensureSocket();await resumeOutput();
       voiceRecognitionWanted=true;
-      if(!voiceRecognition){
-        voiceRecognition=new SpeechRecognitionClass();
-        voiceRecognition.continuous=false;voiceRecognition.interimResults=true;voiceRecognition.lang="en-US";voiceRecognition.maxAlternatives=1;
-        voiceRecognition.onstart=()=>{listening=true;voiceRecognitionStarting=false;mic?.classList.add("active");mic?.setAttribute("aria-pressed","true");setState("listening","Listening…");};
-        voiceRecognition.onresult=event=>{
-          let interim="",finalText="";
-          for(let i=event.resultIndex;i<event.results.length;i++){
-            const result=event.results[i],text=result?.[0]?.transcript?.trim()||"";
-            if(result.isFinal)finalText+=(finalText?" ":"")+text;else interim+=(interim?" ":"")+text;
-          }
-          if(finalText)voiceRecognition.__finalTranscript=(voiceRecognition.__finalTranscript+" "+finalText).trim();
-          const display=((voiceRecognition.__finalTranscript||"")+" "+interim).trim();
-          if(display){if(!inputRow)inputRow=addMessage(display,"user");else inputRow.textContent=display;}
-        };
-        voiceRecognition.onerror=event=>{
-          listening=false;voiceRecognitionStarting=false;
-          if(event?.error!=="aborted"&&voiceRecognitionWanted){
-            console.warn("Puja speech recognition error",event?.error);
-            setTimeout(()=>startSpeechRecognitionCycle(),350);
-          }
-        };
-        voiceRecognition.onend=async()=>{
-          listening=false;voiceRecognitionStarting=false;
-          mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
-          const transcript=(voiceRecognition.__finalTranscript||"").trim();
-          voiceRecognition.__finalTranscript="";
-          if(!voiceRecognitionWanted)return;
-          if(transcript){
-            try{await groundVoiceTurnFromTranscript(transcript);}
-            catch(e){console.warn("Puja voice turn failed",e);addMessage("Puja is temporarily unavailable. Please try again.","bot");}
-          }else if(!responsePending){
-            addMessage("I didn't quite catch that. Could you rephrase?","bot");
-          }
-          if(!responsePending&&voiceRecognitionWanted)startSpeechRecognitionCycle();
-        };
-      }
-      startSpeechRecognitionCycle();
+      startSpeechRecognitionCycle(SpeechRecognitionClass);
     }catch(e){
       voiceRecognitionWanted=false;listening=false;mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
       addMessage("Voice input could not start in this browser. Please use the text box below.","bot");
     }
   }
 
-  function startSpeechRecognitionCycle(){
-    if(!voiceRecognitionWanted||listening||voiceRecognitionStarting||responsePending||!voiceRecognition)return;
+  function startSpeechRecognitionCycle(SpeechRecognitionClass){
+    if(!voiceRecognitionWanted||listening||voiceRecognitionStarting||responsePending)return;
+    const Recognition=SpeechRecognitionClass||window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!Recognition)return;
     try{
-      voiceRecognitionStarting=true;voiceRecognition.__finalTranscript="";voiceRecognition.start();
+      voiceRecognitionStarting=true;
+      const recognition=new Recognition();
+      voiceRecognition=recognition;
+      recognition.continuous=true;
+      recognition.interimResults=true;
+      recognition.lang="en-US";
+      recognition.maxAlternatives=1;
+      recognition.__finalTranscript="";
+      recognition.__submitting=false;
+
+      recognition.onstart=()=>{
+        if(voiceRecognition!==recognition)return;
+        listening=true;voiceRecognitionStarting=false;
+        mic?.classList.add("active");mic?.setAttribute("aria-pressed","true");
+        setState("listening","Listening…");
+      };
+
+      recognition.onresult=event=>{
+        if(voiceRecognition!==recognition)return;
+        let interim="",finalText="";
+        for(let i=event.resultIndex;i<event.results.length;i++){
+          const result=event.results[i],text=result?.[0]?.transcript?.trim()||"";
+          if(result.isFinal)finalText+=(finalText?" ":"")+text;
+          else interim+=(interim?" ":"")+text;
+        }
+        if(finalText){
+          recognition.__finalTranscript=(recognition.__finalTranscript+" "+finalText).trim();
+          if(voiceFinalizationTimer)clearTimeout(voiceFinalizationTimer);
+          // Give the speaker a generous pause window so a natural pause does not
+          // cause Puja to answer before the question is finished.
+          voiceFinalizationTimer=setTimeout(()=>finalizeVoiceRecognition(recognition),1800);
+        }
+        const display=((recognition.__finalTranscript||"")+" "+interim).trim();
+        if(display){
+          if(!inputRow)inputRow=addMessage(display,"user");
+          else inputRow.textContent=display;
+        }
+      };
+
+      recognition.onerror=event=>{
+        if(voiceRecognition!==recognition)return;
+        listening=false;voiceRecognitionStarting=false;
+        if(event?.error!=="aborted"&&voiceRecognitionWanted&&!recognition.__submitting){
+          console.warn("Puja speech recognition error",event?.error);
+          setTimeout(()=>startSpeechRecognitionCycle(),500);
+        }
+      };
+
+      recognition.onend=async()=>{
+        if(voiceRecognition!==recognition)return;
+        listening=false;voiceRecognitionStarting=false;
+        mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
+        if(voiceFinalizationTimer){clearTimeout(voiceFinalizationTimer);voiceFinalizationTimer=null;}
+        const transcript=(recognition.__finalTranscript||"").trim();
+        voiceRecognition=null;
+
+        if(!voiceRecognitionWanted)return;
+        if(!recognition.__submitting&&transcript&&!responsePending){
+          recognition.__submitting=true;
+          try{await groundVoiceTurnFromTranscript(transcript);}
+          catch(e){console.warn("Puja voice turn failed",e);addMessage("Puja is temporarily unavailable. Please try again.","bot");}
+        }else if(!transcript&&!responsePending){
+          addMessage("I didn't quite catch that. Could you rephrase?","bot");
+          startSpeechRecognitionCycle();
+        }
+      };
+
+      recognition.start();
     }catch(e){
       voiceRecognitionStarting=false;
-      setTimeout(()=>{if(voiceRecognitionWanted&&!responsePending&&!listening)startSpeechRecognitionCycle();},400);
+      if(voiceRecognition===recognition)voiceRecognition=null;
+      setTimeout(()=>{if(voiceRecognitionWanted&&!responsePending&&!listening)startSpeechRecognitionCycle();},500);
     }
   }
 
+  function finalizeVoiceRecognition(recognition){
+    if(!recognition||voiceRecognition!==recognition||recognition.__submitting)return;
+    const transcript=(recognition.__finalTranscript||"").trim();
+    if(!transcript)return;
+    recognition.__submitting=true;
+    if(voiceFinalizationTimer){clearTimeout(voiceFinalizationTimer);voiceFinalizationTimer=null;}
+    try{recognition.stop();}catch(_){}
+    // onend owns the actual send, after the browser closes this recognition turn.
+  }
+
   function stopMicrophone(){
-    voiceRecognitionWanted=false;listening=false;voiceRecognitionStarting=false;
+    voiceRecognitionWanted=false;
+    listening=false;
+    voiceRecognitionStarting=false;
+    if(voiceFinalizationTimer){clearTimeout(voiceFinalizationTimer);voiceFinalizationTimer=null;}
     const recognition=voiceRecognition;
-    try{recognition?.stop();}catch(_){try{recognition?.abort();}catch(__){}}
-    voiceRecognition=null;window.__pujaSpeechRecognition=null;
+    voiceRecognition=null;
+    try{recognition?.abort();}catch(_){}
+    window.__pujaSpeechRecognition=null;
     mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
     setState(null,socket&&socket.readyState===WebSocket.OPEN?"Gemini Live · ready":"Puja · ready");
   }
