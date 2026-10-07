@@ -120,7 +120,7 @@
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0;
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
   let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
-  let audioChunksThisTurn=0;
+  let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="";
 
   function setState(state,label){
     avatar?.classList.remove("speaking","listening"); mini?.classList.remove("speaking","listening");
@@ -387,6 +387,7 @@
           const t=s.inputTranscription.text.trim();
 
           if(t){
+            pendingVoiceTranscript=t;
             if(!inputRow){
               inputRow=addMessage(t,"user");
             }else{
@@ -417,6 +418,24 @@
         }
 
         if(s.turnComplete){
+          if(groundVoiceTurn && pendingVoiceTranscript.trim()){
+            const voiceQuestion=pendingVoiceTranscript.trim();
+            groundVoiceTurn=false;
+            pendingVoiceTranscript="";
+            outputRow=null;
+            outputText="";
+            audioChunksThisTurn=0;
+            inputRow=null;
+            try{
+              await sendGroundedVoiceTurn(voiceQuestion);
+            }catch(e){
+              suppressPlayback=false;
+              addMessage(e?.message||"Puja could not answer that voice question right now.","bot");
+              setState(null,"Puja · unavailable");
+            }
+            return;
+          }
+
           if(outputText && audioChunksThisTurn===0){
             console.warn("Puja Live: turn completed with transcription but no audio chunks received.");
           }
@@ -479,6 +498,22 @@
       }
       throw e;
     });
+  }
+
+  async function sendGroundedVoiceTurn(value){
+    const qctx=await getQuestionContext(value);
+    if(!qctx.smallTalk&&!qctx.matches.length){
+      suppressPlayback=false;
+      addMessage(noKnowledgeAnswer(),"bot");
+      setState(null,"Puja · ready");
+      return;
+    }
+
+    await ensureSocket();
+    await resumeOutput();
+    suppressPlayback=false;
+    socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:"Answer the visitor using ONLY the authoritative published Sage Harvest website knowledge supplied below. This is the grounded voice-answer turn. Do not use outside knowledge, assumptions or general Gemini knowledge. Preserve the existing Puja persona and guardrails. If the supplied website entries do not clearly answer the question, say so and direct the visitor to contact.html. Do not invent vacancies, clients, results, fees, offices, commitments or dates.\n\n"+qctx.context+"\n\nVisitor question: "+value}]}],turnComplete:true}}));
+    setState(null,"Puja is thinking…");
   }
 
   async function sendTextTurn(text){
@@ -587,6 +622,11 @@
       silentGain.connect(microphoneContext.destination);
 
       listening=true;
+      groundVoiceTurn=true;
+      pendingVoiceTranscript="";
+      // Hold back the automatic first-pass Live response until the
+      // transcribed question has been grounded against the website.
+      suppressPlayback=true;
       mic?.classList.add("active");
       mic?.setAttribute("aria-pressed","true");
       setState("listening","Listening…");
@@ -601,6 +641,8 @@
   function stopMicrophone(){
     const wasListening=listening;
     listening=false;
+    groundVoiceTurn=false;
+    pendingVoiceTranscript="";
 
     // Explicitly close the current realtime audio turn so Gemini can finalize
     // the user's speech even when server-side VAD has not fired yet.
