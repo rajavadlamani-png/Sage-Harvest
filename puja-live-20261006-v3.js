@@ -296,7 +296,7 @@
         fail(new Error("Puja Live setup timed out after 15 seconds. The WebSocket opened but Gemini did not complete setup."));
       },15000);
 
-      ws.onopen=()=>{
+      ws.onopen=async()=>{
         if(socket!==ws)return;
 
         ws.send(JSON.stringify({
