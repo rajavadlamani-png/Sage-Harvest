@@ -8,34 +8,104 @@
   const KNOWLEDGE_URL = "assets/data/puja-knowledge.json";
   let knowledgeEntries = [];
   let knowledgePromise = null;
-  function normalizeKnowledgeText(value){return String(value||"").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9\s-]/g," ").replace(/\s+/g," ").trim();}
-  function stemKnowledgeToken(token){const t=String(token||"");if(t.length<=4)return t;if(t.endsWith("ies"))return t.slice(0,-3)+"y";if(t.endsWith("es"))return t.slice(0,-2);if(t.endsWith("s"))return t.slice(0,-1);return t;}
+  function normalizeKnowledgeText(value){
+    return String(value||"").toLowerCase()
+      .replace(/[’‘]/g,"'")
+      .replace(/&/g," and ")
+      .replace(/[^a-z0-9\s-]/g," ")
+      .replace(/\s+/g," ").trim();
+  }
+  function tokenForms(token){
+    const t=String(token||"").toLowerCase();
+    if(!t)return [];
+    const forms=new Set([t]);
+    if(t.length>4){
+      if(t.endsWith("ies"))forms.add(t.slice(0,-3)+"y");
+      if(t.endsWith("s"))forms.add(t.slice(0,-1));
+      else forms.add(t+"s");
+    }
+    return [...forms];
+  }
+  function phraseInQuery(phrase,q){
+    const p=normalizeKnowledgeText(phrase);
+    return p.length>1&&q.includes(p);
+  }
   async function ensureKnowledge(){
     if(knowledgeEntries.length)return knowledgeEntries;
     if(knowledgePromise)return knowledgePromise;
-    knowledgePromise=fetch(new URL(KNOWLEDGE_URL,document.baseURI).href,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("Puja website knowledge could not be loaded.");return r.json();}).then(d=>{if(!d||!Array.isArray(d.entries)||!d.entries.length)throw new Error("Puja website knowledge is empty.");knowledgeEntries=d.entries;return knowledgeEntries;}).catch(e=>{knowledgePromise=null;throw e;});
+    knowledgePromise=fetch(new URL(KNOWLEDGE_URL,document.baseURI).href,{cache:"no-store"})
+      .then(r=>{if(!r.ok)throw new Error("Puja website knowledge could not be loaded.");return r.json();})
+      .then(d=>{if(!d||!Array.isArray(d.entries)||!d.entries.length)throw new Error("Puja website knowledge is empty.");knowledgeEntries=d.entries;return knowledgeEntries;})
+      .catch(e=>{knowledgePromise=null;throw e;});
     return knowledgePromise;
   }
-  function isGreetingOrCourtesy(value){const q=normalizeKnowledgeText(value);return /^(hi|hello|hey|good morning|good afternoon|good evening|thanks|thank you|thank you puja|who are you|what is your name|how are you|nice to meet you)[!?.,\s]*$/i.test(q);}
+  function isGreetingOrCourtesy(value){
+    const q=normalizeKnowledgeText(value);
+    return /^(hi|hello|hey|good morning|good afternoon|good evening|thanks|thank you|thank you puja|who are you|what is your name|how are you|nice to meet you)[!?.,\s]*$/i.test(q);
+  }
   function matchKnowledge(value){
     const q=normalizeKnowledgeText(value);if(!q)return [];
-    const qTokens=new Set(q.split(/\s+/).map(stemKnowledgeToken).filter(t=>t.length>2));
+    const rawTokens=q.split(/\s+/).filter(t=>t.length>2);
+    const qTokens=new Set(rawTokens.flatMap(tokenForms));
     return knowledgeEntries.map(entry=>{
-      const hay=normalizeKnowledgeText([entry.page_title,entry.section_heading,entry.text,...(entry.keywords||[]),...(entry.synonyms||[])].join(" "));
+      const heading=normalizeKnowledgeText(entry.section_heading||"");
+      const page=normalizeKnowledgeText(entry.page_title||"");
+      const keywords=(entry.keywords||[]).map(normalizeKnowledgeText).filter(Boolean);
+      const synonyms=(entry.synonyms||[]).map(normalizeKnowledgeText).filter(Boolean);
       let score=0;
-      for(const phrase of (entry.synonyms||[])){const p=normalizeKnowledgeText(phrase);if(p&&q.includes(p))score+=8;}
-      const heading=normalizeKnowledgeText(entry.section_heading||"");if(heading&&q.includes(heading))score+=10;
-      const page=normalizeKnowledgeText(entry.page_title||"");if(page&&q.includes(page))score+=8;
-      for(const token of hay.split(/\s+/).map(stemKnowledgeToken)){if(qTokens.has(token))score+=1;}
+      for(const phrase of synonyms){
+        if(phraseInQuery(phrase,q))score+=14;
+      }
+      if(heading&&phraseInQuery(heading,q))score+=16;
+      else{
+        const headingTokens=heading.split(/\s+/).filter(t=>t.length>2);
+        const headingHits=headingTokens.filter(t=>qTokens.has(t)||tokenForms(t).some(f=>qTokens.has(f))).length;
+        score+=Math.min(headingHits*3,9);
+      }
+      if(page&&phraseInQuery(page,q))score+=12;
+      for(const phrase of keywords){
+        if(phrase.length>2&&phraseInQuery(phrase,q))score+=6;
+      }
+      const contentTokens=normalizeKnowledgeText(entry.text||"").split(/\s+/).filter(t=>t.length>3);
+      const uniqueContent=[...new Set(contentTokens)];
+      let tokenHits=0;
+      for(const token of uniqueContent){
+        const forms=tokenForms(token);
+        if(forms.some(f=>qTokens.has(f)))tokenHits++;
+      }
+      score+=Math.min(tokenHits*1.5,12);
       return {...entry,_score:score};
-    }).filter(e=>e._score>=3).sort((a,b)=>b._score-a._score).slice(0,8);
+    }).filter(e=>e._score>=5).sort((a,b)=>b._score-a._score).slice(0,6);
   }
-  function formatMatchedKnowledge(matches){return matches.map((e,i)=>"SOURCE "+(i+1)+"\nPAGE TITLE: "+e.page_title+"\nSECTION: "+e.section_heading+"\nSOURCE URL: "+e.url+"\nPUBLISHED TEXT: "+e.text).join("\n\n");}
-  function formatAllKnowledge(){return knowledgeEntries.map(e=>"PAGE TITLE: "+e.page_title+"\nSECTION: "+e.section_heading+"\nSOURCE URL: "+e.url+"\nPUBLISHED TEXT: "+e.text).join("\n\n");}
+  function formatMatchedKnowledge(matches){
+    return matches.map((e,i)=>"SOURCE "+(i+1)+"\nPAGE TITLE: "+e.page_title+"\nSECTION: "+e.section_heading+"\nSOURCE URL: "+e.url+"\nPUBLISHED TEXT: "+e.text).join("\n\n");
+  }
+  function formatAllKnowledge(){
+    return knowledgeEntries.map(e=>"PAGE TITLE: "+e.page_title+"\nSECTION: "+e.section_heading+"\nSOURCE URL: "+e.url+"\nPUBLISHED TEXT: "+e.text).join("\n\n");
+  }
   function noKnowledgeAnswer(){return "I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.";}
-  function addKnowledgeLinks(matches){const seen=new Set();for(const e of matches.slice(0,2)){if(!e.url||seen.has(e.url))continue;seen.add(e.url);const wrap=document.createElement("div");wrap.className="puja-navigation-link";const a=document.createElement("a");a.className="puja-inline-link";a.href=e.url;a.textContent="Learn more: "+e.page_title+" →";wrap.appendChild(a);messages.appendChild(wrap);}messages.scrollTop=messages.scrollHeight;}
-  async function getCurrentKnowledgeInstruction(){await ensureKnowledge();return SITE_KNOWLEDGE+"\n\nCURRENT PUBLISHED SITE KNOWLEDGE — THIS IS THE AUTHORITATIVE CURRENT SOURCE. For factual answers, use only this current published-site corpus. Do not use outside knowledge, assumptions or invented facts. If the current corpus does not clearly answer the visitor, say so and direct the visitor to contact.html.\n\n"+formatAllKnowledge();}
-  async function getQuestionContext(value){await ensureKnowledge();if(isGreetingOrCourtesy(value))return {matches:[],context:SITE_KNOWLEDGE,smallTalk:true};const matches=matchKnowledge(value);if(!matches.length)return {matches,context:"",smallTalk:false};return {matches,context:SITE_KNOWLEDGE+"\n\nCURRENT MATCHED PUBLISHED SITE ENTRIES — USE ONLY THESE ENTRIES FOR FACTUAL CONTENT IN THIS ANSWER. Do not use outside knowledge or any factual detail not supported by these entries. If these entries do not clearly answer the question, say so and direct the visitor to contact.html.\n\n"+formatMatchedKnowledge(matches),smallTalk:false};}
+  function addKnowledgeLinks(matches){
+    const seen=new Set();
+    for(const e of matches.slice(0,2)){
+      if(!e.url||seen.has(e.url))continue;
+      seen.add(e.url);
+      const wrap=document.createElement("div");wrap.className="puja-navigation-link";
+      const a=document.createElement("a");a.className="puja-inline-link";a.href=e.url;a.textContent="Learn more: "+e.page_title+" →";
+      wrap.appendChild(a);messages.appendChild(wrap);
+    }
+    messages.scrollTop=messages.scrollHeight;
+  }
+  async function getCurrentKnowledgeInstruction(){
+    await ensureKnowledge();
+    return SITE_KNOWLEDGE+"\n\nCURRENT PUBLISHED SITE KNOWLEDGE — THIS IS THE AUTHORITATIVE CURRENT SOURCE. For factual answers, use only this current published-site corpus. Do not use outside knowledge, assumptions or invented facts. If the current corpus does not clearly answer the visitor, say so and direct the visitor to contact.html.\n\n"+formatAllKnowledge();
+  }
+  async function getQuestionContext(value){
+    await ensureKnowledge();
+    if(isGreetingOrCourtesy(value))return {matches:[],context:SITE_KNOWLEDGE,smallTalk:true};
+    const matches=matchKnowledge(value);
+    if(!matches.length)return {matches,context:"",smallTalk:false};
+    return {matches,context:SITE_KNOWLEDGE+"\n\nCURRENT MATCHED PUBLISHED SITE ENTRIES — USE ONLY THESE ENTRIES FOR FACTUAL CONTENT IN THIS ANSWER. Do not use outside knowledge or any factual detail not supported by these entries. If these entries do not clearly answer the question, say so and direct the visitor to contact.html.\n\n"+formatMatchedKnowledge(matches),smallTalk:false};
+  }
 
   const INPUT_RATE = 16000, OUTPUT_RATE = 24000;
   const $ = id => document.getElementById(id);
