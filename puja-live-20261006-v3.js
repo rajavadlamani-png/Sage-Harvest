@@ -821,7 +821,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       recognition.lang="en-US";
       recognition.maxAlternatives=1;
       recognition.__finalTranscript="";
-      recognition.__submitting=false;
+      recognition.__submitting=false;recognition.__finalizing=false;
 
       recognition.onstart=()=>{
         if(voiceRecognition!==recognition)return;
@@ -889,10 +889,10 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   }
 
   function finalizeVoiceRecognition(recognition){
-    if(!recognition||voiceRecognition!==recognition||recognition.__submitting)return;
+    if(!recognition||voiceRecognition!==recognition||recognition.__submitting||recognition.__finalizing)return;
     const transcript=(recognition.__finalTranscript||"").trim();
     if(!transcript)return;
-    recognition.__submitting=true;
+    recognition.__finalizing=true;
     if(voiceFinalizationTimer){clearTimeout(voiceFinalizationTimer);voiceFinalizationTimer=null;}
     try{recognition.stop();}catch(_){}
     // onend owns the actual send, after the browser closes this recognition turn.
