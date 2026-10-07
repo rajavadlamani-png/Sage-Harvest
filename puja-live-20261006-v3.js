@@ -481,7 +481,15 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
                 disabled:true
               }
             },
-            inputAudioTranscription:{},
+            inputAudioTranscription:{
+              customVocabulary:[
+                "Sage Harvest","Raja Vadlamani","careers","Careers & Collaboration",
+                "collaboration","consulting engagements","Seed Supply Chain Strategy",
+                "Digital & AI","Sustainability & Climate","International Expansion & Trade",
+                "M&A Supply Chain Due Diligence","Strategic & Leadership Advisory",
+                "due diligence","supply chain","Sage Harvest Agro"
+              ]
+            },
             outputAudioTranscription:{},
             sessionResumption:{}
           }
@@ -701,7 +709,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
         ? ("GROUNDING INSTRUCTIONS — Answer the visitor using ONLY the supplied published Sage Harvest entries below. Do not add, infer, assume or invent any factual detail that is not present in those entries. If the wording appears to contain a speech-recognition error, silently rephrase the visitor's question to the closest meaning supported by the supplied entries before answering. Do not introduce facts during rephrasing. Answer naturally and concisely.\n\n"+qctx.context+"\n\nVISITOR QUESTION: "+q+"\n\nNORMALIZED QUESTION IF NEEDED: "+(qctx.rephrasedQuery||q))
         : (qctx.smallTalk
           ? ("This is a simple courtesy/greeting. Respond naturally as Puja without introducing unsupported factual claims.\n\nVISITOR: "+q)
-          : ("The published Sage Harvest website knowledge does not clearly answer this question. Speak exactly: \""+noKnowledgeAnswer()+"\"\n\nVISITOR QUESTION: "+q));
+          : ("REPHRASE BEFORE REFUSAL — The visitor's speech transcript may contain recognition errors. First silently rephrase the question to the closest meaning supported by the published Sage Harvest website context. Do not add or invent facts while rephrasing. If the published website still does not clearly answer the rephrased question, speak exactly: \""+noKnowledgeAnswer()+"\"\n\nVISITOR QUESTION: "+q+"\n\nLOCALLY REPAIRED QUESTION IF ANY: "+(qctx.rephrasedQuery||q)));
       socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:groundingText}]}],turnComplete:true}}));
       setState(null,"Puja is checking the Sage Harvest website…");
     }catch(e){
