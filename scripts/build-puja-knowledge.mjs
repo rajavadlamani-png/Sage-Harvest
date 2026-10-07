@@ -92,4 +92,4 @@ const result = {
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(result, null, 2) + "\n");
-console.log(\`Generated \${entries.length} Puja knowledge entries at \${OUT}\`);
+console.log("Generated " + entries.length + " Puja knowledge entries at " + OUT);
