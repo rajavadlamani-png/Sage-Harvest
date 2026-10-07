@@ -400,8 +400,11 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       recognition.onresult=event=>{
         for(let i=event.resultIndex;i<event.results.length;i++){
           const text=event.results[i]?.[0]?.transcript?.trim()||"";
-          if(text&&isStopVoiceCommand(text)){
-            pujaDebug("voice_stop_command",{command:text});
+          if(!text)continue;
+          const normalized=text.toLowerCase().replace(/[^a-z\s']/g," ").replace(/\s+/g," ").trim();
+          const stopNow=/\b(stop|stop talking|stop speaking|stop now|stop it|be quiet|quiet|that's enough|thats enough|enough)\b/.test(normalized);
+          if(stopNow){
+            pujaDebug("voice_stop_command",{command:text,final:!!event.results[i]?.isFinal});
             stopTalking();
             return;
           }
