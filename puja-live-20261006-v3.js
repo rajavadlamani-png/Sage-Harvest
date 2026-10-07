@@ -282,6 +282,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   let socket=null, setupReady=false, connecting=false, suppressPlayback=false, activeVoiceTurnId=null, sessionResumptionHandle=null;
   let voiceMuted=false;
   let voiceRecognition=null, voiceRecognitionWanted=false, voiceRecognitionStarting=false;
+  let voiceStopRequested=false;
   try{voiceMuted=sessionStorage.getItem("pujaVoiceMuted")==="true";}catch(_){}
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0, playbackQueue=Promise.resolve(), playbackGeneration=0;
   let responsePending=false, responseSerial=0, lastVoiceTranscript="", lastVoiceTranscriptPerfMs=0;
@@ -364,7 +365,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     startStopCommandListener();
   }
   function queuePcm(b64,turnId){
-    if(!b64)return;
+    if(!b64||voiceStopRequested||voiceMuted)return;
     const generation=playbackGeneration;
     playbackQueue=playbackQueue.catch(()=>{}).then(async()=>{
       if(generation!==playbackGeneration)return;
@@ -647,6 +648,9 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         }
 
         if(s.modelTurn?.parts?.length){
+          if(voiceStopRequested||voiceMuted){
+            pujaDebug("audio_ignored_after_stop",{responseSerial});
+          }else{
           if(!pujaDebugTurn)pujaDebugNewTurn("voice");
           pujaDebugTurn.serverContentCount++;pujaDebugTurn.generationCount++;
           if(activeVoiceTurnId&&pujaDebugTurn.id===activeVoiceTurnId)pujaDebugTurn.groundedGenerationCount++;
@@ -657,6 +661,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
               if(pujaDebugTurn.firstAudioPerfMs==null){pujaDebugTurn.firstAudioPerfMs=performance.now();pujaDebug("first_audio_chunk",{turnId:activeVoiceTurnId||pujaDebugTurn.id});}
               queuePcm(inline.data,activeVoiceTurnId||pujaDebugTurn.id);
             }
+          }
           }
         }
 
@@ -673,7 +678,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
             outputRow=null;outputText="";inputRow=null;activeVoiceTurnId=null;
             setState(null,listening?"Listening…":"Gemini Live · ready");
             pujaDebugFinishTurn();pujaDebugTurn=null;
-            if(voiceRecognitionWanted)startSpeechRecognitionCycle();
+            if(voiceRecognitionWanted&&!voiceStopRequested&&!voiceMuted)startSpeechRecognitionCycle();
           }else{
             if(outputText)addLink(outputText);
             outputRow=null;outputText="";inputRow=null;
@@ -749,6 +754,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
 
   async function groundVoiceTurnFromTranscript(value){
     const q=String(value||"").trim();
+    voiceStopRequested=false;
     if(!q||!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
     const now=performance.now();
     if(q===lastVoiceTranscript&&now-lastVoiceTranscriptPerfMs<2500){
@@ -812,6 +818,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
 
   async function sendTextTurn(text){
     const value=String(text||"").trim();if(!value)return;
+    voiceStopRequested=false;
     addMessage(value,"user");
     try{
       const qctx=await getQuestionContext(value);
@@ -930,6 +937,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   }
 
   function stopTalking(){
+    voiceStopRequested=true;
     stopStopCommandListener();
     stopMicrophone();
     stopPlayback();
@@ -944,6 +952,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     try{
       primeAudio();
       voiceMuted=false;
+      voiceStopRequested=false;
       try{sessionStorage.removeItem("pujaVoiceMuted");}catch(_){}
       if(stopBtn)stopBtn.textContent="Stop voice";
       closedByUser=false;
