@@ -8,13 +8,15 @@
 :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#173d2d;background:#f5f1e8}
 *{box-sizing:border-box}body{margin:0}.wrap{max-width:1180px;margin:auto;padding:32px 20px 60px}
 header{background:#173d2d;color:#fff;border-radius:20px;padding:28px;margin-bottom:24px}
-h1{margin:0 0 8px;font-size:clamp(28px,4vw,44px)}p{line-height:1.6}
-.note{background:#fff;border:1px solid #d9d1c0;border-radius:16px;padding:18px;margin:18px 0}
+h1{margin:0 0 8px;font-size:clamp(28px,4vw,44px)}h2{margin:0 0 8px}p{line-height:1.6}
+.note,.lab{background:#fff;border:1px solid #d9d1c0;border-radius:16px;padding:18px;margin:18px 0}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{background:#fff;border:1px solid #d9d1c0;border-radius:18px;overflow:hidden}
 .card h2{font-size:20px;margin:0;padding:18px 20px 8px}.card p{padding:0 20px;margin:0 0 14px;color:#58665d}
-.demo{min-height:620px;border-top:1px solid #e6e0d5;background:#faf9f5}
-iframe{display:block;width:100%;height:620px;border:0}
+.demo{min-height:620px;border-top:1px solid #e6e0d5;background:#faf9f5}iframe{display:block;width:100%;height:620px;border:0}
 .badge{display:inline-block;border-radius:999px;padding:5px 10px;background:#e9efe8;font-size:12px;font-weight:700;margin-right:6px}
+button{border:0;border-radius:10px;padding:11px 15px;background:#173d2d;color:#fff;font-weight:700;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}.status{margin-top:12px;padding:12px;border-radius:10px;background:#f3f6f2;font-size:14px;white-space:pre-wrap}
+pre{overflow:auto;background:#17201b;color:#eef5ef;padding:14px;border-radius:10px;font-size:12px;max-height:300px}
 footer{margin-top:22px;color:#66736b;font-size:13px}
 @media(max-width:800px){.grid{grid-template-columns:1fr}.demo,iframe{height:620px}}
 </style>
@@ -22,39 +24,78 @@ footer{margin-top:22px;color:#66736b;font-size:13px}
 <body>
 <div class="wrap">
 <header>
-<div class="badge">PUJA · EXPERIMENTAL</div>
-<div class="badge">VAANI / IISc</div>
+<div class="badge">PUJA · EXPERIMENTAL</div><div class="badge">VAANI / IISc</div>
 <h1>Puja Voice Lab</h1>
 <p>This is an isolated prototype. The live Sage Harvest Puja assistant is not changed by this page.</p>
 </header>
 
 <section class="note">
 <strong>What we are testing</strong>
-<p>1) SraVaani for speech input and continuous recognition. 2) DhVaani for a natural female Puja voice. 3) Later, we will connect the successful voice components to Sage Harvest knowledge retrieval and the Gemini text model.</p>
-<p><strong>No software is installed on your laptop.</strong> These experiments run in the browser using hosted Hugging Face Spaces.</p>
+<p><b>Target architecture:</b> SraVaani ASR → Sage Harvest retrieval → Gemini text → DhVaani female TTS.</p>
+<p><b>Browser-only:</b> no software or model files are installed on the corporate laptop. Hugging Face hosts the Vaani demos, and the Gradio JavaScript client can connect to hosted Gradio Spaces directly from a browser. citeturn8search1turn8search2</p>
+</section>
+
+<section class="lab">
+<h2>3. Vaani API connectivity test</h2>
+<p>First we verify that the browser can discover the public Gradio APIs. This does not call Gemini and does not touch production Puja.</p>
+<button id="probe" type="button">Connect to Vaani APIs</button>
+<div id="status" class="status">Not tested yet.</div>
+<pre id="api" hidden></pre>
 </section>
 
 <div class="grid">
 <section class="card">
 <h2>1. SraVaani · Live ASR</h2>
-<p>Speak naturally and see whether the streaming transcription captures complete questions without cutting you off.</p>
-<div class="demo">
-<iframe src="https://huggingface.co/spaces/ARTPARK-IISc/SraVaani-live-Demo?embed=true" title="SraVaani live speech recognition"></iframe>
-</div>
+<p>Speak naturally and check whether streaming transcription captures complete questions without cutting you off.</p>
+<div class="demo"><iframe src="https://huggingface.co/spaces/ARTPARK-IISc/SraVaani-live-Demo?embed=true" title="SraVaani live speech recognition"></iframe></div>
 </section>
 
 <section class="card">
-<h2>2. DhVaani · Female Voice Test</h2>
-<p>Use the official Vaani TTS demo to test the available female voice options. We will choose the voice that best fits Puja.</p>
-<div class="demo">
-<iframe src="https://huggingface.co/spaces/ARTPARK-IISc/DhVaani-Demo?embed=true" title="DhVaani text to speech"></iframe>
-</div>
+<h2>2. DhVaani · Female Voice</h2>
+<p>The official demo exposes a built-in <b>Female</b> speaker option. DhVaani supports 27 Indian languages, including English and Telugu. citeturn4view0</p>
+<div class="demo"><iframe src="https://huggingface.co/spaces/ARTPARK-IISc/DhVaani-Demo?embed=true" title="DhVaani text to speech"></iframe></div>
 </section>
 </div>
 
 <footer>
-Prototype branch: puja-vaani-prototype-20261008 · The production Puja 33 build remains untouched.
+Prototype branch: <b>puja-vaani-prototype-20261008</b> · Production Puja 33 remains untouched.
 </footer>
 </div>
+
+<script type="module">
+import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
+
+const probe = document.getElementById("probe");
+const status = document.getElementById("status");
+const api = document.getElementById("api");
+
+function compact(info){
+  const out = {};
+  if(info && info.named_endpoints) out.named_endpoints = info.named_endpoints;
+  if(info && info.unnamed_endpoints) out.unnamed_endpoints = info.unnamed_endpoints;
+  return out;
+}
+
+probe.addEventListener("click", async () => {
+  probe.disabled = true;
+  status.textContent = "Connecting to SraVaani and DhVaani…";
+  api.hidden = true;
+  try {
+    const [asr, tts] = await Promise.all([
+      Client.connect("ARTPARK-IISc/SraVaani-live-Demo"),
+      Client.connect("ARTPARK-IISc/DhVaani-Demo")
+    ]);
+    const [asrInfo, ttsInfo] = await Promise.all([asr.view_api(), tts.view_api()]);
+    const result = { SraVaani: compact(asrInfo), DhVaani: compact(ttsInfo) };
+    api.textContent = JSON.stringify(result, null, 2);
+    api.hidden = false;
+    status.textContent = "Vaani APIs are reachable from the browser. The next engineering step is to wire the discovered ASR/TTS endpoints into the Sage Harvest answer pipeline.";
+  } catch (err) {
+    status.textContent = "Browser API connection did not complete. The embedded official demos can still be used. Details:\n" + (err?.message || String(err));
+  } finally {
+    probe.disabled = false;
+  }
+});
+</script>
 </body>
 </html>
