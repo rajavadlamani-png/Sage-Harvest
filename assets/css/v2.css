@@ -428,7 +428,7 @@ main>.compact-services.section article a{display:inline-block;margin-top:8px;fon
   background-position:center;
   background-size:cover;
   background-repeat:no-repeat;
-  transition:opacity 1.5s ease-in-out,transform 7.5s ease-out;
+  transition:opacity .8s ease-in-out,transform 2.8s ease-out;
   will-change:opacity,transform;
 }
 .hero-refined .hero-slide.is-active{
