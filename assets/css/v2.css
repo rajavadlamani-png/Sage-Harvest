@@ -500,3 +500,8 @@ main>.compact-services.section article a{display:inline-block;margin-top:8px;fon
 .home-principle-visual{display:flex;align-items:center;justify-content:center;min-width:0}
 .home-principle-visual img{display:block;width:100%;max-width:560px;height:auto;max-height:360px;object-fit:contain;border-radius:16px}
 @media(max-width:760px){.home-principle.section{grid-template-columns:1fr;gap:24px}.home-principle-visual img{max-width:520px;max-height:300px}}
+
+/* Site audit: keep image presentation in CSS rather than inline overrides. */
+.hero-refined .hero-image-panel .hero-art-seed{display:block;position:relative;inset:auto;width:100%;height:auto;max-width:600px;opacity:1;visibility:visible;object-fit:contain;animation:none;padding:0}
+.puja-avatar-mini,.puja-avatar{position:relative;overflow:hidden;border-radius:50%;isolation:isolate}
+.puja-avatar-image{display:block;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 48%;border-radius:50%;z-index:2}
