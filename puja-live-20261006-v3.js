@@ -572,13 +572,22 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         }
 
         if(s.turnComplete){
-          if(!pujaDebugTurn||pujaDebugTurn.id!==activeVoiceTurnId){pujaDebug("late_turn_complete_ignored",{turnId:activeVoiceTurnId||null});return;}
-          pujaDebugTurn.turnCompletePerfMs=performance.now();
-          pujaDebug("turn_complete",{turnId:activeVoiceTurnId,generationCount:pujaDebugTurn.generationCount});
-          if(outputText)addLink(outputText);
-          outputRow=null;outputText="";inputRow=null;activeVoiceTurnId=null;
-          setState(null,listening?"Listening…":"Gemini Live · ready");
-          pujaDebugFinishTurn();pujaDebugTurn=null;
+          if(activeVoiceTurnId){
+            if(!pujaDebugTurn||pujaDebugTurn.id!==activeVoiceTurnId){
+              pujaDebug("late_turn_complete_ignored",{turnId:activeVoiceTurnId||null});
+              return;
+            }
+            pujaDebugTurn.turnCompletePerfMs=performance.now();
+            pujaDebug("turn_complete",{turnId:activeVoiceTurnId,generationCount:pujaDebugTurn.generationCount});
+            if(outputText)addLink(outputText);
+            outputRow=null;outputText="";inputRow=null;activeVoiceTurnId=null;
+            setState(null,listening?"Listening…":"Gemini Live · ready");
+            pujaDebugFinishTurn();pujaDebugTurn=null;
+          }else{
+            if(outputText)addLink(outputText);
+            outputRow=null;outputText="";inputRow=null;
+            setState(null,listening?"Listening…":"Gemini Live · ready");
+          }
         }
       };
 
@@ -614,7 +623,14 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
           );
         }
 
-        if(!closedByUser){
+        if(!closedByUser&&reconnectRequested){
+          reconnectRequested=false;
+          clearTimeout(reconnectTimer);
+          reconnectTimer=setTimeout(()=>{
+            reconnectTimer=null;
+            ensureSocket().catch(e=>{console.warn("Puja Live session resumption reconnect failed",e);setState(null,"Gemini Live · disconnected");});
+          },100);
+        }else if(!closedByUser){
           setState(null,"Gemini Live · disconnected");
         }
       };
@@ -643,7 +659,12 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   async function groundVoiceTurnFromTranscript(value){
     const q=String(value||"").trim();
     if(!q||voiceGroundingSent||!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
-    activeVoiceTurnId=pujaDebugTurn?.id||("turn-"+Date.now());
+    const turn=pujaDebugTurn||pujaDebugNewTurn("voice");
+    activeVoiceTurnId=turn.id;
+    turn.speechEndPerfMs=turn.speechEndPerfMs??performance.now();
+    turn.transcript=q;
+    turn.transcriptParts=[q];
+    turn.outboundGenerations=1;
     voiceGroundingSent=true;
     try{
       const qctx=await getQuestionContext(q);
