@@ -317,65 +317,17 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       if(outputContext.state==="suspended")outputContext.resume().catch(()=>{});
     }catch(e){console.warn("Puja audio could not be primed",e);}
   }
-  function selectFallbackFemaleVoice(){
-    if(!("speechSynthesis" in window))return null;
-    try{
-      const voices=window.speechSynthesis.getVoices?.()||[];
-      if(!voices.length)return null;
-
-      const preferredNames=[
-        "Microsoft Zira",
-        "Microsoft Jenny",
-        "Microsoft Aria",
-        "Samantha",
-        "Karen",
-        "Google UK English Female",
-        "Google US English",
-        "Microsoft Sonia"
-      ];
-
-      for(const name of preferredNames){
-        const exact=voices.find(v=>
-          String(v.name||"").toLowerCase().includes(name.toLowerCase()) &&
-          /^en(-|_)/i.test(String(v.lang||""))
-        );
-        if(exact)return exact;
-      }
-
-      const english=voices.filter(v=>/^en(-|_)/i.test(String(v.lang||"")));
-      const femaleHint=english.find(v=>
-        /female|zira|jenny|aria|samantha|karen|sonia|ava|allison|susan/i.test(String(v.name||""))
-      );
-
-      return femaleHint ||
-             english.find(v=>/US|GB|IN/i.test(String(v.lang||""))) ||
-             english[0] ||
-             null;
-    }catch(e){
-      console.warn("Puja fallback voice selection failed",e);
-      return null;
-    }
-  }
-
   function speakFallback(text){
     if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window))return;
     try{
       window.speechSynthesis.cancel();
       const utterance=new SpeechSynthesisUtterance(text);
-      const voice=selectFallbackFemaleVoice();
-      if(voice)utterance.voice=voice;
-      utterance.rate=0.98;
-      utterance.pitch=1;
-      utterance.volume=1;
+      utterance.rate=1;utterance.pitch=1;utterance.volume=1;
       utterance.onstart=()=>setState("speaking","Puja is speaking");
       utterance.onend=()=>setState(null,"Text voice mode · ready");
       utterance.onerror=()=>setState(null,"Text mode · ready");
       window.speechSynthesis.speak(utterance);
     }catch(e){console.warn("Puja browser speech fallback failed",e);}
-  }
-
-  if("speechSynthesis" in window){
-    try{window.speechSynthesis.addEventListener?.("voiceschanged",()=>selectFallbackFemaleVoice());}catch(_){}
   }
   async function sendFallbackText(value){
     const qctx=await getQuestionContext(value);
