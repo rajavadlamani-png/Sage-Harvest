@@ -498,6 +498,115 @@
     }
   }
 
+  function floatTo16BitBase64(float32){
+    const pcm=new Int16Array(float32.length);
+    for(let i=0;i<float32.length;i++){
+      const sample=Math.max(-1,Math.min(1,float32[i]));
+      pcm[i]=sample<0?sample*0x8000:sample*0x7fff;
+    }
+    const bytes=new Uint8Array(pcm.buffer);
+    let binary="";
+    const chunkSize=0x8000;
+    for(let i=0;i<bytes.length;i+=chunkSize){
+      binary+=String.fromCharCode(...bytes.subarray(i,i+chunkSize));
+    }
+    return btoa(binary);
+  }
+
+  function downsampleTo16k(buffer,inputRate){
+    if(inputRate===INPUT_RATE)return buffer;
+    const ratio=inputRate/INPUT_RATE;
+    const newLength=Math.round(buffer.length/ratio);
+    const result=new Float32Array(newLength);
+    let offset=0;
+    for(let i=0;i<newLength;i++){
+      const nextOffset=Math.min(buffer.length,Math.round((i+1)*ratio));
+      let sum=0,count=0;
+      for(let j=offset;j<nextOffset;j++){sum+=buffer[j];count++;}
+      result[i]=count?sum/count:0;
+      offset=nextOffset;
+    }
+    return result;
+  }
+
+  async function startMicrophone(){
+    if(listening)return;
+    try{
+      await ensureSocket();
+      if(!navigator.mediaDevices?.getUserMedia){
+        throw new Error("Microphone access is not supported by this browser.");
+      }
+      microphoneStream=await navigator.mediaDevices.getUserMedia({
+        audio:{
+          channelCount:1,
+          echoCancellation:true,
+          noiseSuppression:true,
+          autoGainControl:true
+        }
+      });
+      const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+      if(!AudioContextClass)throw new Error("Microphone audio is not supported by this browser.");
+      microphoneContext=new AudioContextClass();
+      if(microphoneContext.state==="suspended")await microphoneContext.resume();
+      microphoneSource=microphoneContext.createMediaStreamSource(microphoneStream);
+      microphoneProcessor=microphoneContext.createScriptProcessor(4096,1,1);
+      const silentGain=microphoneContext.createGain();
+      silentGain.gain.value=0;
+      microphoneProcessor.onaudioprocess=event=>{
+        if(!listening||!socket||socket.readyState!==WebSocket.OPEN)return;
+        const inputBuffer=event.inputBuffer.getChannelData(0);
+        const pcm16k=downsampleTo16k(inputBuffer,microphoneContext.sampleRate);
+        const data=floatTo16BitBase64(pcm16k);
+        if(!data)return;
+        try{
+          socket.send(JSON.stringify({
+            realtimeInput:{
+              mediaChunks:[{
+                mimeType:"audio/pcm;rate=16000",
+                data
+              }]
+            }
+          }));
+        }catch(e){
+          console.warn("Puja microphone audio could not be sent",e);
+        }
+      };
+      microphoneSource.connect(microphoneProcessor);
+      microphoneProcessor.connect(silentGain);
+      silentGain.connect(microphoneContext.destination);
+      listening=true;
+      setState("listening","Listening…");
+    }catch(e){
+      console.warn("Puja microphone could not start",e);
+      stopMicrophone();
+      setState(null,"Microphone unavailable");
+      addMessage(e?.message||"Microphone access is unavailable. Please check browser microphone permission.","bot");
+    }
+  }
+
+  function stopMicrophone(){
+    listening=false;
+    try{microphoneProcessor?.disconnect();}catch(_){}
+    try{microphoneSource?.disconnect();}catch(_){}
+    try{microphoneStream?.getTracks().forEach(track=>track.stop());}catch(_){}
+    if(microphoneContext){
+      try{microphoneContext.close();}catch(_){}
+    }
+    microphoneProcessor=null;
+    microphoneSource=null;
+    microphoneStream=null;
+    microphoneContext=null;
+    setState(null,socket&&socket.readyState===WebSocket.OPEN?"Gemini Live · ready":"Puja · ready");
+  }
+
+  function stopTalking(){
+    stopPlayback();
+    voiceMuted=true;
+    try{sessionStorage.setItem("pujaVoiceMuted","true");}catch(_){}
+    if(stopBtn)stopBtn.textContent="Resume voice";
+    setState(null,listening?"Listening…":"Voice muted · ready");
+  }
+
   function toggleMicrophone(){primeAudio();if(listening)stopMicrophone();else startMicrophone();}
   function openPanel(){
     primeAudio();
