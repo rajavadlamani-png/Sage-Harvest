@@ -852,7 +852,19 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
           if(!voiceRecognitionWanted)return;
           if(responsePending){
             // Keep the user-activated recognition session alive while Puja speaks.
-            setTimeout(()=>{if(voiceRecognitionWanted&&responsePending&&!listening)startSpeechRecognitionCycle();},80);
+            // Do not use startSpeechRecognitionCycle() here because that helper
+            // intentionally blocks while responsePending is true.
+            setTimeout(()=>{
+              if(!voiceRecognitionWanted||!responsePending||listening||voiceRecognitionStarting||!voiceRecognition)return;
+              try{
+                voiceRecognitionStarting=true;
+                voiceRecognition.__finalTranscript="";
+                voiceRecognition.start();
+              }catch(e){
+                voiceRecognitionStarting=false;
+                console.warn("Puja speech recognition restart during response failed",e);
+              }
+            },80);
             return;
           }
           if(transcript){
