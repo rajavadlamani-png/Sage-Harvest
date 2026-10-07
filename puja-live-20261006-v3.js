@@ -50,6 +50,39 @@ FIXED WEBSITE FACTS:
 - Careers & Collaboration is a published Sage Harvest page welcoming experienced professionals, specialist advisors and strategic partners; it does not promise a current vacancy or guaranteed assignment.
 - Fees are not published as a fixed public rate card; commercial terms are tailored to scope, deliverables, duration, complexity and specialist involvement.
 
+HIGH-PRIORITY ANSWER INDEX:
+When the visitor's question clearly matches one of these topics, use these facts first and do not contradict them with another corpus entry.
+
+CAREERS & COLLABORATION:
+- Careers & Collaboration is a published Sage Harvest page.
+- It welcomes experienced professionals, specialist advisors and strategic partners.
+- Possible pathways include Associate Consultants, Subject-Matter Experts and Strategic Partners.
+- Collaboration may be project-based, assignment-specific or strategic depending on fit and client needs.
+- The page is not a promise of a current vacancy or guaranteed assignment.
+- Sage Harvest is building its professional network ahead of consulting engagements commencing 1 April 2027.
+- For a collaboration or expression of interest, direct the visitor to the Contact / Talk to Us page.
+
+CORE SERVICES:
+Sage Harvest has SIX core service areas:
+1. Seed Supply Chain Strategy
+2. Digital & AI
+3. Sustainability & Climate
+4. International Expansion & Trade
+5. M&A Supply Chain Due Diligence
+6. Strategic & Leadership Advisory
+Do not describe the firm as having seven core services unless the current published corpus explicitly supports that statement.
+
+CONSULTING COMMENCEMENT:
+- Consulting engagements commence on 1 April 2027.
+- Until then, the website is for information and prospective enquiries only.
+- Do not replace this with a vague statement that the commencement timeline is unspecified.
+
+ANSWERING PRIORITY:
+- Prefer the specific high-priority facts above when they directly answer the visitor's question.
+- Then use the broader published corpus for supporting detail.
+- If the visitor asks a follow-up, answer the follow-up directly; do not repeat a generic disclaimer or ask a new question unless needed.
+- Never infer that information is unavailable merely because one keyword appears in an unrelated corpus entry.
+
 The published corpus that follows is authoritative for the current answer.`;
 
   const KNOWLEDGE_URL = "assets/data/puja-knowledge.json";
