@@ -89,3 +89,26 @@
 .launch-notice{margin:0;padding:12px 20px;text-align:center;background:#f3f0e5;color:#25432f;border-bottom:1px solid rgba(37,67,47,.18);font-size:.94rem;line-height:1.5}
 .launch-notice strong{font-weight:800}
 @media(max-width:700px){.launch-notice{padding:11px 14px;font-size:.86rem}}
+
+
+/* Purpose, vision, mission and strategic goals on the About page */
+.purpose-section{background:#f5f2e9;color:#173b2c}
+.purpose-intro{max-width:780px;margin:0 auto 38px;text-align:center}
+.purpose-intro h2{font-size:clamp(2.2rem,4.5vw,3.8rem);line-height:1.06;letter-spacing:-.045em;margin:.4rem 0 1rem}
+.purpose-intro h2 em{font-style:normal;color:#8b7542}
+.purpose-intro>p:last-child{max-width:680px;margin:0 auto;color:#58665b;font-size:1.08rem;line-height:1.75}
+.purpose-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.purpose-card{padding:clamp(22px,3vw,34px);background:rgba(255,255,255,.82);border:1px solid rgba(23,59,44,.12);border-radius:18px;box-shadow:0 12px 35px rgba(23,59,44,.045)}
+.purpose-card-featured{background:#173b2c;color:#fff;border-color:#173b2c}
+.purpose-kicker{display:block;font-size:.7rem;font-weight:800;letter-spacing:.16em;color:#9b8145;margin-bottom:22px}
+.purpose-card h3{font-size:clamp(1.25rem,2vw,1.65rem);line-height:1.2;letter-spacing:-.025em;margin:0 0 14px}
+.purpose-card p{font-size:.96rem;line-height:1.75;color:#5c695f;margin:0}
+.purpose-card-featured p{color:#e1e8df}
+.goals-band{margin-top:22px;padding:clamp(24px,4vw,40px);border:1px solid rgba(23,59,44,.14);border-radius:18px;background:rgba(255,255,255,.55)}
+.goals-band>.eyebrow{margin-bottom:22px}
+.goal-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 34px}
+.goal-list>div{display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:start;padding:17px 0;border-top:1px solid rgba(23,59,44,.13)}
+.goal-list>div>span{font-size:.78rem;font-weight:800;letter-spacing:.08em;color:#9b8145;padding-top:3px}
+.goal-list p{margin:0;color:#58665b;line-height:1.65}
+.goal-list strong{color:#173b2c}
+@media(max-width:760px){.purpose-grid{grid-template-columns:1fr}.purpose-card{padding:24px}.goal-list{grid-template-columns:1fr}.purpose-intro{text-align:left}.purpose-intro>p:last-child{margin:0}}
