@@ -435,9 +435,6 @@ main>.compact-services.section article a{display:inline-block;margin-top:8px;fon
   opacity:1;
   transform:scale(1.0);
 }
-.hero-refined .hero-slide-one{background-image:url('../img/sage-harvest-home-banner.png')}
-.hero-refined .hero-slide-two{background-image:url('../img/verification-first.png')}
-.hero-refined .hero-slide-three{background-image:url('../img/seed-chain-diagram.svg')}
 .hero-refined .hero-slideshow-shade{
   position:absolute;
   inset:0;
