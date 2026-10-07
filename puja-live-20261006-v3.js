@@ -282,10 +282,10 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   let socket=null, setupReady=false, connecting=false, suppressPlayback=false, activeVoiceTurnId=null, sessionResumptionHandle=null;
   let voiceMuted=false;
   try{voiceMuted=sessionStorage.getItem("pujaVoiceMuted")==="true";}catch(_){}
-  let outputContext=null, playbackSources=new Set(), nextPlayTime=0;
+  let outputContext=null, playbackSources=new Set(), nextPlayTime=0, playbackQueue=Promise.resolve(), playbackGeneration=0;
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
   let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
-  let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="", voiceGroundingSent=false, voiceSpeechEnded=false, voiceGroundingTimer=null, groundingInterruptExpected=false;
+  let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="", voiceSpeechEnded=false, voiceGroundingTimer=null, groundingInterruptExpected=false;
 
   function setState(state,label){
     avatar?.classList.remove("speaking","listening"); mini?.classList.remove("speaking","listening");
@@ -340,7 +340,8 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     setState(null,"Text voice mode · ready");
   }
   async function playPcm(b64){
-    if(!b64)return;await resumeOutput();
+    if(!b64)return;
+    await resumeOutput();
     const bytes=b64bytes(b64),pcm=new Int16Array(bytes.buffer,bytes.byteOffset,Math.floor(bytes.byteLength/2));
     const buffer=outputContext.createBuffer(1,pcm.length,OUTPUT_RATE),channel=buffer.getChannelData(0);
     for(let i=0;i<pcm.length;i++)channel[i]=pcm[i]/32768;
@@ -348,9 +349,22 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     nextPlayTime=Math.max(nextPlayTime,outputContext.currentTime+0.02);
     if(pujaDebugTurn&&pujaDebugTurn.playbackStartPerfMs==null){pujaDebugTurn.playbackStartPerfMs=performance.now();pujaDebug("playback_start",{turnId:pujaDebugTurn.id});}
     source.start(nextPlayTime);nextPlayTime+=buffer.duration;
-    playbackSources.add(source);source.onended=()=>{playbackSources.delete(source);if(playbackSources.size===0&&!suppressPlayback){setState(null,listening?"Listening…":"Gemini Live · ready");}};setState("speaking","Puja is speaking · Gemini Live");
+    playbackSources.add(source);
+    source.onended=()=>{playbackSources.delete(source);if(playbackSources.size===0&&!suppressPlayback)setState(null,listening?"Listening…":"Gemini Live · ready");};
+    setState("speaking","Puja is speaking · Gemini Live");
+  }
+  function queuePcm(b64,turnId){
+    if(!b64)return;
+    const generation=playbackGeneration;
+    playbackQueue=playbackQueue.catch(()=>{}).then(async()=>{
+      if(generation!==playbackGeneration)return;
+      try{await playPcm(b64);pujaDebug("audio_chunk_playback",{turnId:turnId||null});}
+      catch(e){console.warn("Puja audio playback failed",e);setState(null,"Puja audio unavailable");}
+    });
   }
   function stopPlayback(){
+    playbackGeneration++;
+    playbackQueue=Promise.resolve();
     for(const source of playbackSources){try{source.stop();}catch(_){}try{source.disconnect();}catch(_){}}
     playbackSources.clear();nextPlayTime=0;setState(null,listening?"Listening…":"Gemini Live · ready");
   }
@@ -542,7 +556,6 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         }
 
         if(s.outputTranscription?.text){
-          if(!voiceGroundingSent)return;
           if(!pujaDebugTurn)pujaDebugNewTurn("voice");
           pujaDebug("output_transcription",{turnId:pujaDebugTurn.id,text:s.outputTranscription.text});
           const lowerOutput=String(s.outputTranscription.text).toLowerCase();
@@ -559,14 +572,13 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         if(s.modelTurn?.parts?.length){
           if(!pujaDebugTurn)pujaDebugNewTurn("voice");
           pujaDebugTurn.serverContentCount++;pujaDebugTurn.generationCount++;
+          if(activeVoiceTurnId&&pujaDebugTurn.id===activeVoiceTurnId)pujaDebugTurn.groundedGenerationCount++;
           pujaDebug("model_generation",{turnId:pujaDebugTurn.id,generationCount:pujaDebugTurn.generationCount,partCount:s.modelTurn.parts.length});
-        }
-        if(activeVoiceTurnId&&pujaDebugTurn?.id===activeVoiceTurnId){
-          for(const part of(s.modelTurn?.parts||[])){
+          for(const part of(s.modelTurn.parts||[])){
             const inline=part?.inlineData||part?.inline_data;
             if(inline?.data){
-              if(pujaDebugTurn.firstAudioPerfMs==null){pujaDebugTurn.firstAudioPerfMs=performance.now();pujaDebug("first_audio_chunk",{turnId:activeVoiceTurnId});}
-              await playPcm(inline.data);
+              if(pujaDebugTurn.firstAudioPerfMs==null){pujaDebugTurn.firstAudioPerfMs=performance.now();pujaDebug("first_audio_chunk",{turnId:activeVoiceTurnId||pujaDebugTurn.id});}
+              queuePcm(inline.data,activeVoiceTurnId||pujaDebugTurn.id);
             }
           }
         }
@@ -584,7 +596,6 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
             setState(null,listening?"Listening…":"Gemini Live · ready");
             pujaDebugFinishTurn();pujaDebugTurn=null;
           }else{
-            voiceGroundingSent=false;
             if(outputText)addLink(outputText);
             outputRow=null;outputText="";inputRow=null;
             setState(null,listening?"Listening…":"Gemini Live · ready");
@@ -646,27 +657,26 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   }
 
   function scheduleVoiceGrounding(reason){
-    if(!voiceSpeechEnded||voiceGroundingSent)return;
+    if(!voiceSpeechEnded)return;
     if(voiceGroundingTimer)clearTimeout(voiceGroundingTimer);
     const delay=pendingVoiceTranscript?80:450;
     pujaDebug("grounding_wait",{reason,delayMs:delay,transcript:pujaDebugTurn?.transcript||pendingVoiceTranscript});
     voiceGroundingTimer=setTimeout(()=>{
       voiceGroundingTimer=null;
       const transcript=pujaDebugTurn?.transcript||pendingVoiceTranscript;
-      if(transcript&&!voiceGroundingSent)groundVoiceTurnFromTranscript(transcript);
+      if(transcript)groundVoiceTurnFromTranscript(transcript);
     },delay);
   }
 
   async function groundVoiceTurnFromTranscript(value){
     const q=String(value||"").trim();
     if(!q||!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
-    const turn=pujaDebugTurn||pujaDebugNewTurn("voice");
+    const turn=pujaDebugNewTurn("voice");
     activeVoiceTurnId=turn.id;
     turn.speechEndPerfMs=turn.speechEndPerfMs??performance.now();
     turn.transcript=q;
     turn.transcriptParts=[q];
     turn.outboundGenerations=1;
-    voiceGroundingSent=true;
     try{
       const qctx=await getQuestionContext(q);
       if(pujaDebugTurn){
@@ -686,7 +696,6 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       pujaDebug("grounded_turn_sent",{turnId:activeVoiceTurnId});
       setState(null,"Puja is answering…");
     }catch(e){
-      voiceGroundingSent=false;
       suppressPlayback=false;
       console.warn("Puja deterministic voice grounding failed",e);
     }
