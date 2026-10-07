@@ -278,3 +278,34 @@ footer .copyright{align-self:end}
     background-position:right center;
   }
 }
+
+
+/* Verification First — editorial feature section */
+.verification-section{
+  display:grid;
+  grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);
+  gap:clamp(30px,6vw,84px);
+  align-items:center;
+  background:#fff;
+  padding-top:clamp(58px,8vw,108px);
+  padding-bottom:clamp(58px,8vw,108px);
+}
+.verification-copy{max-width:540px}
+.verification-copy h2{font-size:clamp(38px,4.7vw,62px);line-height:1.04;letter-spacing:-2px;margin:0 0 22px}
+.verification-copy h2 em{font-family:Georgia,serif;font-weight:400;color:var(--green)}
+.verification-copy>p:not(.eyebrow){font-size:17px;line-height:1.8;color:var(--muted);margin:0 0 25px}
+.verification-visual{
+  min-height:clamp(260px,32vw,430px);
+  border-radius:20px;
+  overflow:hidden;
+  background:#e8eadc url('../img/sage-harvest-home-banner.png') no-repeat right center;
+  background-size:auto 100%;
+  box-shadow:0 20px 55px rgba(18,59,43,.12);
+  border:1px solid rgba(18,59,43,.09);
+}
+@media(max-width:760px){
+  .verification-section{grid-template-columns:1fr;gap:28px;padding-top:48px;padding-bottom:48px}
+  .verification-copy h2{font-size:clamp(38px,9vw,52px)}
+  .verification-copy>p:not(.eyebrow){font-size:16px}
+  .verification-visual{min-height:270px;background-position:right center;background-size:auto 100%}
+}
