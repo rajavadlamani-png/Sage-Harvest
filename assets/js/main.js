@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 
-/* Hero-only slideshow: 6 seconds per slide, 1.5-second crossfade. */
+/* Hero-only slideshow: 2 seconds per slide, with all images preloaded for reliable automatic rotation. */
 document.addEventListener('DOMContentLoaded', function () {
   const hero = document.querySelector('.hero-refined');
   if (!hero) return;
@@ -71,7 +71,8 @@ document.addEventListener('DOMContentLoaded', function () {
   let activeIndex = Math.max(0, slides.findIndex(slide => slide.classList.contains('is-active')));
   slides.forEach(slide => slide.classList.remove('is-active'));
   slides[activeIndex].classList.add('is-active');
-  loadSlide(slides[activeIndex]);
+  // Preload all three backgrounds immediately so every slide is ready before it appears.
+  slides.forEach(loadSlide);
 
   if (reducedMotion) return;
 
@@ -84,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function () {
     activeIndex = nextIndex;
   }
   function start() {
-    if (!timer) timer = window.setInterval(advance, 6000);
+    if (!timer) timer = window.setInterval(advance, 2000);
   }
   function stop() {
     if (timer) {
