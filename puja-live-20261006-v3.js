@@ -361,6 +361,8 @@
 
         if(m.setupComplete){
           clearTimeout(timeout);
+          window.PujaLiveReady=true;
+          console.debug("[Puja] session ready");
           setupReady=true;
           connecting=false;
           settled=true;
