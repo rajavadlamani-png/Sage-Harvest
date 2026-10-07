@@ -28,6 +28,20 @@
     const t=pujaDebugTurn;
     pujaDebug("turn_summary",{turnId:t.id,transcript:t.transcript,route:t.route,knowledgeEntries:t.knowledgeEntries,knowledgeChars:t.knowledgeChars,approximateTokens:t.knowledgeApproxTokens,matches:t.matches,notFoundTriggered:t.notFoundTriggered,notFoundReason:t.notFoundReason,generationCount:t.generationCount,outboundGenerations:t.outboundGenerations,speechEndToFirstAudioMs:t.speechEndPerfMs!=null&&t.firstAudioPerfMs!=null?Math.round(t.firstAudioPerfMs-t.speechEndPerfMs):null,firstAudioToPlaybackStartMs:t.firstAudioPerfMs!=null&&t.playbackStartPerfMs!=null?Math.round(t.playbackStartPerfMs-t.firstAudioPerfMs):null,speechEndToTurnCompleteMs:t.speechEndPerfMs!=null&&t.turnCompletePerfMs!=null?Math.round(t.turnCompletePerfMs-t.speechEndPerfMs):null});
   }
+  function pujaDebugRenderVoiceState(){
+    if(!PUJA_DEBUG||!pujaDebugTurn)return;
+    let box=document.getElementById("pujaDebugPanel");
+    if(!box){
+      box=document.createElement("div");
+      box.id="pujaDebugPanel";
+      box.style.cssText="margin:8px 0;padding:8px;border:1px dashed currentColor;border-radius:8px;font:12px/1.35 monospace;white-space:pre-wrap;max-height:180px;overflow:auto;opacity:.85";
+      const target=messages||panel;
+      target?.parentNode?.insertBefore(box,target);
+    }
+    const t=pujaDebugTurn;
+    const matchText=t.matches?.length?t.matches.map(m=>m.id||m.page||"match").join(", "):"NONE";
+    box.textContent="PUJA DEBUG (only with ?pujadebug=1)\nTranscript: "+(t.transcript||"(none yet)")+"\nRoute: "+(t.route||"none")+"\nKnowledge matches: "+matchText+"\nKnowledge entries: "+t.knowledgeEntries+" | chars: "+t.knowledgeChars;
+  }
   const LIVE_TOKEN_URL = "https://sageharvest-puja.raja-vadlamani.workers.dev/live-token";
   const MODEL = "models/gemini-3.8-live";
   const VOICE = "Kore";
@@ -503,6 +517,14 @@ The published corpus that follows is authoritative for the current answer.`;
             pujaDebugTurn.transcriptParts.push(t);
             pujaDebugTurn.transcript=pujaDebugTurn.transcriptParts.join(" ");
             pujaDebug("input_transcription",{turnId:pujaDebugTurn.id,fragment:t,transcript:pujaDebugTurn.transcript});
+            pujaDebugRenderVoiceState();
+            ensureKnowledge().then(()=>{
+              if(!pujaDebugTurn)return;
+              const routed=routedKnowledge(pujaDebugTurn.transcript);
+              const matches=routed.length?routed:matchKnowledge(pujaDebugTurn.transcript);
+              pujaDebugKnowledge(knowledgeEntries.length,formatAllKnowledge().length,routed.length?"routed":"keyword",matches);
+              pujaDebugRenderVoiceState();
+            }).catch(()=>{});
             pendingVoiceTranscript=t;
             if(!inputRow){
               inputRow=addMessage(t,"user");
@@ -821,6 +843,9 @@ The published corpus that follows is authoritative for the current answer.`;
     }
   }
   window.addEventListener("puja:open",openPanel);
+  if(PUJA_DEBUG){
+    setTimeout(()=>pujaDebugRenderVoiceState(),0);
+  }
   pujaDebug("diagnostics_loaded",{enabled:PUJA_DEBUG,debugUrl:PUJA_DEBUG?window.location.href:null});
   window.addEventListener("puja:close",closePanel);
   mic?.addEventListener("click",toggleMicrophone);
