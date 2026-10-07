@@ -234,18 +234,11 @@ footer .copyright{align-self:end}
   letter-spacing:.015em;
 }
 .hero-refined .hero-image-panel{
-  display:block;
-  min-height:460px;
-  width:100%;
-  border-radius:22px;
-  overflow:hidden;
-  background-color:#e9eee4;
+  display:block;width:100%;aspect-ratio:1.894 / 1;min-height:0;height:auto;
+  border-radius:22px;overflow:hidden;background-color:#e9eee4;
   background-image:url('../img/sage-harvest-home-banner.png');
-  background-repeat:no-repeat;
-  background-position:right center;
-  background-size:auto 100%;
-  box-shadow:0 24px 65px rgba(18,59,43,.13);
-  border:1px solid rgba(18,59,43,.08);
+  background-repeat:no-repeat;background-position:center center;background-size:contain;
+  box-shadow:0 24px 65px rgba(18,59,43,.13);border:1px solid rgba(18,59,43,.08);
 }
 @media(max-width:900px){
   .hero-refined{
@@ -255,13 +248,7 @@ footer .copyright{align-self:end}
   }
   .hero-refined .hero-copy{max-width:760px}
   .hero-refined h1{font-size:clamp(44px,8vw,66px);letter-spacing:-1.8px}
-  .hero-refined .hero-image-panel{
-    width:min(100%,440px);
-    min-height:330px;
-    margin-left:auto;
-    background-size:auto 100%;
-    background-position:right center;
-  }
+  .hero-refined .hero-image-panel{width:100%;aspect-ratio:1.894 / 1;min-height:0;height:auto;margin-left:0;background-size:contain;background-position:center center}
 }
 @media(max-width:600px){
   .hero-refined{padding:42px 6vw 34px;gap:25px}
@@ -269,14 +256,7 @@ footer .copyright{align-self:end}
   .hero-refined .lead{font-size:17px;line-height:1.6}
   .hero-refined .actions{gap:16px;margin-top:22px}
   .hero-refined .hero-proof{margin-top:20px;font-size:12px}
-  .hero-refined .hero-image-panel{
-    width:84%;
-    min-height:300px;
-    margin-left:auto;
-    border-radius:18px;
-    background-size:auto 100%;
-    background-position:right center;
-  }
+  .hero-refined .hero-image-panel{width:100%;aspect-ratio:1.894 / 1;min-height:0;height:auto;margin-left:0;border-radius:16px;background-size:contain;background-position:center center}
 }
 
 
@@ -295,11 +275,11 @@ footer .copyright{align-self:end}
 .verification-copy h2 em{font-family:Georgia,serif;font-weight:400;color:var(--green)}
 .verification-copy>p:not(.eyebrow){font-size:17px;line-height:1.8;color:var(--muted);margin:0 0 25px}
 .verification-visual{
-  min-height:clamp(260px,32vw,430px);
+  width:100%;aspect-ratio:1.894 / 1;min-height:0;height:auto;
   border-radius:20px;
   overflow:hidden;
   background:#e8eadc url('../img/sage-harvest-home-banner.png') no-repeat right center;
-  background-size:auto 100%;
+  background-size:contain;background-position:center center;
   box-shadow:0 20px 55px rgba(18,59,43,.12);
   border:1px solid rgba(18,59,43,.09);
 }
@@ -307,5 +287,5 @@ footer .copyright{align-self:end}
   .verification-section{grid-template-columns:1fr;gap:28px;padding-top:48px;padding-bottom:48px}
   .verification-copy h2{font-size:clamp(38px,9vw,52px)}
   .verification-copy>p:not(.eyebrow){font-size:16px}
-  .verification-visual{min-height:270px;background-position:right center;background-size:auto 100%}
+  .verification-visual{width:100%;aspect-ratio:1.894 / 1;min-height:0;height:auto;background-position:center center;background-size:contain}
 }
