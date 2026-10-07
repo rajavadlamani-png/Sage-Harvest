@@ -290,7 +290,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0;
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
   let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
-  let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="", voiceGroundingSent=false, voiceSpeechEnded=false;
+  let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="", voiceGroundingSent=false, voiceSpeechEnded=false, voiceGroundingTimer=null, groundingInterruptExpected=false;
 
   function setState(state,label){
     avatar?.classList.remove("speaking","listening"); mini?.classList.remove("speaking","listening");
@@ -688,6 +688,18 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
       }
       throw e;
     });
+  }
+
+  function scheduleVoiceGrounding(reason){
+    if(!voiceSpeechEnded||voiceGroundingSent)return;
+    if(voiceGroundingTimer)clearTimeout(voiceGroundingTimer);
+    const delay=pendingVoiceTranscript?80:450;
+    pujaDebug("grounding_wait",{reason,delayMs:delay,transcript:pujaDebugTurn?.transcript||pendingVoiceTranscript});
+    voiceGroundingTimer=setTimeout(()=>{
+      voiceGroundingTimer=null;
+      const transcript=pujaDebugTurn?.transcript||pendingVoiceTranscript;
+      if(transcript&&!voiceGroundingSent)groundVoiceTurnFromTranscript(transcript);
+    },delay);
   }
 
   async function groundVoiceTurnFromTranscript(value){
