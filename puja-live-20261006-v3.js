@@ -288,6 +288,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
   let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
   let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="", voiceSpeechEnded=false, voiceGroundingTimer=null, groundingInterruptExpected=false;
+  let stopCommandRecognition=null, stopCommandListening=false, stopCommandRetryTimer=null;
 
   function setState(state,label){
     avatar?.classList.remove("speaking","listening"); mini?.classList.remove("speaking","listening");
@@ -352,8 +353,15 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     if(pujaDebugTurn&&pujaDebugTurn.playbackStartPerfMs==null){pujaDebugTurn.playbackStartPerfMs=performance.now();pujaDebug("playback_start",{turnId:pujaDebugTurn.id});}
     source.start(nextPlayTime);nextPlayTime+=buffer.duration;
     playbackSources.add(source);
-    source.onended=()=>{playbackSources.delete(source);if(playbackSources.size===0&&!suppressPlayback)setState(null,listening?"Listening…":"Gemini Live · ready");};
+    source.onended=()=>{
+      playbackSources.delete(source);
+      if(playbackSources.size===0){
+        stopStopCommandListener();
+        if(!suppressPlayback)setState(null,listening?"Listening…":"Gemini Live · ready");
+      }
+    };
     setState("speaking","Puja is speaking · Gemini Live");
+    startStopCommandListener();
   }
   function queuePcm(b64,turnId){
     if(!b64)return;
@@ -368,7 +376,67 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     playbackGeneration++;
     playbackQueue=Promise.resolve();
     for(const source of playbackSources){try{source.stop();}catch(_){}try{source.disconnect();}catch(_){}}
-    playbackSources.clear();nextPlayTime=0;setState(null,listening?"Listening…":"Gemini Live · ready");
+    playbackSources.clear();nextPlayTime=0;
+    stopStopCommandListener();
+    setState(null,listening?"Listening…":"Gemini Live · ready");
+  }
+
+  function isStopVoiceCommand(value){
+    const q=String(value||"").toLowerCase().replace(/[^a-z\s']/g," ").replace(/\s+/g," ").trim();
+    return /^(please )?(stop|stop talking|stop speaking|stop now|stop it|be quiet|quiet|that's enough|thats enough|enough)$/.test(q);
+  }
+
+  function stopStopCommandListener(){
+    if(stopCommandRetryTimer){clearTimeout(stopCommandRetryTimer);stopCommandRetryTimer=null;}
+    stopCommandListening=false;
+    const recognition=stopCommandRecognition;
+    stopCommandRecognition=null;
+    try{recognition?.abort();}catch(_){try{recognition?.stop();}catch(__){}}
+  }
+
+  function startStopCommandListener(){
+    if(voiceMuted||stopCommandListening||!playbackSources.size)return;
+    const SpeechRecognitionClass=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SpeechRecognitionClass)return;
+    try{
+      const recognition=new SpeechRecognitionClass();
+      stopCommandRecognition=recognition;
+      stopCommandListening=true;
+      recognition.continuous=false;
+      recognition.interimResults=true;
+      recognition.lang="en-US";
+      recognition.maxAlternatives=1;
+      let heard="";
+      recognition.onresult=event=>{
+        for(let i=event.resultIndex;i<event.results.length;i++){
+          const result=event.results[i];
+          const text=result?.[0]?.transcript?.trim()||"";
+          if(!text)continue;
+          heard=(heard+" "+text).trim();
+          if(result.isFinal&&isStopVoiceCommand(heard)){
+            pujaDebug("voice_stop_command",{command:heard});
+            stopTalking();
+            return;
+          }
+        }
+      };
+      recognition.onerror=()=>{};
+      recognition.onend=()=>{
+        if(stopCommandRecognition!==recognition)return;
+        stopCommandRecognition=null;
+        stopCommandListening=false;
+        if(!voiceMuted&&playbackSources.size){
+          stopCommandRetryTimer=setTimeout(()=>{
+            stopCommandRetryTimer=null;
+            startStopCommandListener();
+          },120);
+        }
+      };
+      recognition.start();
+    }catch(e){
+      stopCommandListening=false;
+      if(stopCommandRecognition===recognition)stopCommandRecognition=null;
+    }
   }
   async function getLiveToken(){
     const controller=new AbortController();
@@ -862,6 +930,8 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   }
 
   function stopTalking(){
+    stopStopCommandListener();
+    stopMicrophone();
     stopPlayback();
     voiceMuted=true;
     try{sessionStorage.setItem("pujaVoiceMuted","true");}catch(_){}
