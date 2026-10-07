@@ -584,6 +584,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
             setState(null,listening?"Listening…":"Gemini Live · ready");
             pujaDebugFinishTurn();pujaDebugTurn=null;
           }else{
+            voiceGroundingSent=false;
             if(outputText)addLink(outputText);
             outputRow=null;outputText="";inputRow=null;
             setState(null,listening?"Listening…":"Gemini Live · ready");
@@ -658,7 +659,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
 
   async function groundVoiceTurnFromTranscript(value){
     const q=String(value||"").trim();
-    if(!q||voiceGroundingSent||!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
+    if(!q||!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
     const turn=pujaDebugTurn||pujaDebugNewTurn("voice");
     activeVoiceTurnId=turn.id;
     turn.speechEndPerfMs=turn.speechEndPerfMs??performance.now();
