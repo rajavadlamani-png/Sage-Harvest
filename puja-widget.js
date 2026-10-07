@@ -34,7 +34,12 @@
   </div>`;
   document.body.insertAdjacentHTML("beforeend", markup);
   const script = document.createElement("script");
-  script.src = "puja-ui.js?v=20261008-knowledge17";
-  script.defer = true;
-  document.body.appendChild(script);
+  const uiScript = document.createElement("script");
+  uiScript.src = "puja-ui.js?v=20261008-knowledge17";
+  uiScript.defer = true;
+  document.body.appendChild(uiScript);
+  const liveScript = document.createElement("script");
+  liveScript.src = "puja-live-20261006-v3.js?v=20261008-knowledge17";
+  liveScript.defer = true;
+  document.body.appendChild(liveScript);
 })();
