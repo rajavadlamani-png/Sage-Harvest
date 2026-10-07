@@ -463,3 +463,10 @@ main>.compact-services.section article a{display:inline-block;margin-top:8px;fon
 @media(prefers-reduced-motion:reduce){
   .hero-refined .hero-slide{transition:none;transform:none}
 }
+
+
+/* Hero contrast correction: preserve the existing wording while making the italic headline legible over the slideshow. */
+.hero-refined h1 em{
+  color:#e8c77d!important;
+  -webkit-text-fill-color:#e8c77d!important;
+}
