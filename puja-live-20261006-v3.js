@@ -536,8 +536,8 @@
         throw new Error("Microphone access is not supported by this browser.");
       }
 
-      // Request microphone access first. Do not make the user wait for
-      // Gemini Live/WebSocket setup before the browser can show its prompt.
+      // Ask for the browser microphone permission first, then make sure
+      // Gemini Live is fully ready before any audio frames are produced.
       microphoneStream=await navigator.mediaDevices.getUserMedia({
         audio:{
           channelCount:1,
@@ -546,6 +546,8 @@
           autoGainControl:true
         }
       });
+
+      await ensureSocket();
 
       const AudioContextClass=window.AudioContext||window.webkitAudioContext;
       if(!AudioContextClass)throw new Error("Microphone audio is not supported by this browser.");
@@ -559,11 +561,13 @@
       silentGain.gain.value=0;
 
       microphoneProcessor.onaudioprocess=event=>{
-        if(!listening||!socket||socket.readyState!==WebSocket.OPEN)return;
+        if(!listening||!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
+
         const inputBuffer=event.inputBuffer.getChannelData(0);
         const pcm16k=downsampleTo16k(inputBuffer,microphoneContext.sampleRate);
         const data=floatTo16BitBase64(pcm16k);
         if(!data)return;
+
         try{
           socket.send(JSON.stringify({
             realtimeInput:{
@@ -584,11 +588,8 @@
 
       listening=true;
       mic?.classList.add("active");
+      mic?.setAttribute("aria-pressed","true");
       setState("listening","Listening…");
-
-      // Connect after microphone capture is active.
-      // Audio is buffered by the callback until the Live socket is ready.
-      await ensureSocket();
     }catch(e){
       console.warn("Puja microphone could not start",e);
       stopMicrophone();
@@ -598,8 +599,19 @@
   }
 
   function stopMicrophone(){
+    const wasListening=listening;
     listening=false;
+
+    // Explicitly close the current realtime audio turn so Gemini can finalize
+    // the user's speech even when server-side VAD has not fired yet.
+    if(wasListening&&socket&&socket.readyState===WebSocket.OPEN&&setupReady){
+      try{
+        socket.send(JSON.stringify({realtimeInput:{audioStreamEnd:true}}));
+      }catch(_){}
+    }
+
     mic?.classList.remove("active");
+    mic?.setAttribute("aria-pressed","false");
     try{microphoneProcessor?.disconnect();}catch(_){}
     try{microphoneSource?.disconnect();}catch(_){}
     try{microphoneStream?.getTracks().forEach(track=>track.stop());}catch(_){}
