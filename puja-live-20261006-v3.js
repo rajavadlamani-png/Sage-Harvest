@@ -282,7 +282,6 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   let socket=null, setupReady=false, connecting=false, suppressPlayback=false, activeVoiceTurnId=null, sessionResumptionHandle=null;
   let voiceMuted=false;
   let voiceRecognition=null, voiceRecognitionWanted=false, voiceRecognitionStarting=false;
-  let stopCommandRecognition=null, stopCommandRetryTimer=null, stopCommandListening=false;
   try{voiceMuted=sessionStorage.getItem("pujaVoiceMuted")==="true";}catch(_){}
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0, playbackQueue=Promise.resolve(), playbackGeneration=0;
   let responsePending=false, responseSerial=0, lastVoiceTranscript="", lastVoiceTranscriptPerfMs=0;
@@ -364,69 +363,6 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       try{await playPcm(b64);pujaDebug("audio_chunk_playback",{turnId:turnId||null});}
       catch(e){console.warn("Puja audio playback failed",e);setState(null,"Puja audio unavailable");}
     });
-  }
-
-  function isStopVoiceCommand(value){
-    const q=String(value||"").toLowerCase().replace(/[^a-z\s']/g," ").replace(/\s+/g," ").trim();
-    return /^(please )?(stop|stop talking|stop speaking|stop now|stop it|be quiet|quiet|that's enough|thats enough|enough)$/.test(q);
-  }
-
-  function stopStopCommandListener(){
-    if(stopCommandRetryTimer){clearTimeout(stopCommandRetryTimer);stopCommandRetryTimer=null;}
-    stopCommandListening=false;
-    const recognition=stopCommandRecognition;
-    stopCommandRecognition=null;
-    try{recognition?.abort();}catch(_){}
-    mic?.classList.remove("active");
-    mic?.setAttribute("aria-pressed","false");
-  }
-
-  function startStopCommandListener(){
-    if(stopCommandListening||voiceMuted||!responsePending)return;
-    const SpeechRecognitionClass=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!SpeechRecognitionClass)return;
-    try{
-      const recognition=new SpeechRecognitionClass();
-      stopCommandRecognition=recognition;
-      stopCommandListening=true;
-      recognition.continuous=true;
-      recognition.interimResults=true;
-      recognition.lang="en-US";
-      recognition.maxAlternatives=1;
-      recognition.onstart=()=>{
-        mic?.classList.add("active");
-        mic?.setAttribute("aria-pressed","true");
-      };
-      recognition.onresult=event=>{
-        for(let i=event.resultIndex;i<event.results.length;i++){
-          const text=event.results[i]?.[0]?.transcript?.trim()||"";
-          if(!text)continue;
-          const normalized=text.toLowerCase().replace(/[^a-z\s']/g," ").replace(/\s+/g," ").trim();
-          const stopNow=/\b(stop|stop talking|stop speaking|stop now|stop it|be quiet|quiet|that's enough|thats enough|enough)\b/.test(normalized);
-          if(stopNow){
-            pujaDebug("voice_stop_command",{command:text,final:!!event.results[i]?.isFinal});
-            stopTalking();
-            return;
-          }
-        }
-      };
-      recognition.onerror=()=>{};
-      recognition.onend=()=>{
-        if(stopCommandRecognition!==recognition)return;
-        stopCommandRecognition=null;
-        stopCommandListening=false;
-        if(!voiceMuted&&responsePending){
-          stopCommandRetryTimer=setTimeout(()=>{
-            stopCommandRetryTimer=null;
-            startStopCommandListener();
-          },80);
-        }
-      };
-      recognition.start();
-    }catch(e){
-      stopCommandListening=false;
-      if(stopCommandRecognition===recognition)stopCommandRecognition=null;
-    }
   }
 
   function stopPlayback(){
@@ -658,7 +594,6 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         }
 
         if(s.turnComplete){
-          stopStopCommandListener();
           responsePending=false;
           if(activeVoiceTurnId){
             if(!pujaDebugTurn||pujaDebugTurn.id!==activeVoiceTurnId){
@@ -783,7 +718,6 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       suppressPlayback=false;
       pujaDebug("grounded_turn_sent",{turnId:activeVoiceTurnId,responseSerial});
       setState(null,"Puja is answering…");
-      startStopCommandListener();
     }catch(e){
       responsePending=false;
       suppressPlayback=false;
@@ -807,7 +741,6 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     suppressPlayback=false;
     socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:"Answer the visitor using ONLY the authoritative published Sage Harvest website knowledge supplied below. This is the grounded voice-answer turn. Do not use outside knowledge, assumptions or general Gemini knowledge. Preserve the existing Puja persona and guardrails. If the supplied website entries do not clearly answer the question, say so and direct the visitor to contact.html. Do not invent vacancies, clients, results, fees, offices, commitments or dates.\n\n"+qctx.context+"\n\nVisitor question: "+value}]}],turnComplete:true}}));
     setState(null,"Puja is thinking…");
-    startStopCommandListener();
   }
 
   async function sendTextTurn(text){
@@ -869,13 +802,24 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       voiceRecognitionWanted=true;
       if(!voiceRecognition){
         voiceRecognition=new SpeechRecognitionClass();
-        voiceRecognition.continuous=false;voiceRecognition.interimResults=true;voiceRecognition.lang="en-US";voiceRecognition.maxAlternatives=1;
+        voiceRecognition.continuous=true;voiceRecognition.interimResults=true;voiceRecognition.lang="en-US";voiceRecognition.maxAlternatives=1;
         voiceRecognition.onstart=()=>{listening=true;voiceRecognitionStarting=false;mic?.classList.add("active");mic?.setAttribute("aria-pressed","true");setState("listening","Listening…");};
         voiceRecognition.onresult=event=>{
           let interim="",finalText="";
           for(let i=event.resultIndex;i<event.results.length;i++){
             const result=event.results[i],text=result?.[0]?.transcript?.trim()||"";
             if(result.isFinal)finalText+=(finalText?" ":"")+text;else interim+=(interim?" ":"")+text;
+          }
+          const liveSpeech=(finalText+" "+interim).trim();
+          if(responsePending&&liveSpeech){
+            const normalized=liveSpeech.toLowerCase().replace(/[^a-z\s']/g," ").replace(/\s+/g," ").trim();
+            if(/\b(stop|stop talking|stop speaking|stop now|stop it|be quiet|quiet|that's enough|thats enough|enough)\b/.test(normalized)){
+              pujaDebug("voice_stop_command",{command:liveSpeech,final:!!event.results[event.results.length-1]?.isFinal});
+              stopTalking();
+              return;
+            }
+            // Ignore Puja's own speech/ambient speech while she is answering.
+            continue;
           }
           if(finalText)voiceRecognition.__finalTranscript=(voiceRecognition.__finalTranscript+" "+finalText).trim();
           const display=((voiceRecognition.__finalTranscript||"")+" "+interim).trim();
@@ -894,13 +838,18 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
           const transcript=(voiceRecognition.__finalTranscript||"").trim();
           voiceRecognition.__finalTranscript="";
           if(!voiceRecognitionWanted)return;
+          if(responsePending){
+            // Keep the user-activated recognition session alive while Puja speaks.
+            setTimeout(()=>{if(voiceRecognitionWanted&&responsePending&&!listening)startSpeechRecognitionCycle();},80);
+            return;
+          }
           if(transcript){
             try{await groundVoiceTurnFromTranscript(transcript);}
             catch(e){console.warn("Puja voice turn failed",e);addMessage("Puja is temporarily unavailable. Please try again.","bot");}
-          }else if(!responsePending){
+          }else{
             addMessage("I didn't quite catch that. Could you rephrase?","bot");
           }
-          if(!responsePending&&voiceRecognitionWanted)startSpeechRecognitionCycle();
+          if(voiceRecognitionWanted)startSpeechRecognitionCycle();
         };
       }
       startSpeechRecognitionCycle();
@@ -930,7 +879,6 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   }
 
   function stopTalking(){
-    stopStopCommandListener();
     stopMicrophone();
     stopPlayback();
     voiceMuted=true;
