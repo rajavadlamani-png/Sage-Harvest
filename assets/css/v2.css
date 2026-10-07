@@ -485,3 +485,11 @@ main>.compact-services.section article a{display:inline-block;margin-top:8px;fon
 .hero-refined .hero-image-panel .hero-art-seed{
   filter:drop-shadow(0 16px 24px rgba(0,0,0,.22));
 }
+
+
+/* Homepage simplification: keep the landing page editorial and move the interactive system into Services. */
+.home-principle.section{display:block;padding-top:clamp(34px,4vw,54px);padding-bottom:clamp(34px,4vw,54px);background:#fff;border-top:1px solid #e8e8df;border-bottom:1px solid #e8e8df}
+.home-principle .eyebrow{margin-bottom:10px}
+.home-principle h2{font-size:clamp(30px,3.8vw,46px);line-height:1.08;letter-spacing:-1.2px;margin:0 0 12px}
+.home-principle h2 em{color:#174833}
+.home-principle>p:not(.eyebrow){max-width:760px;color:#647168;line-height:1.7;margin:0 0 14px}
