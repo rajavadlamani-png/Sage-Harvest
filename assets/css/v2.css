@@ -321,3 +321,15 @@ main>.compact-services.section article a{display:inline-block;margin-top:8px;fon
 .home-cta .button{display:inline-block}
 @media(max-width:900px){main>.compact-services.section{grid-template-columns:repeat(2,minmax(0,1fr));padding-left:6vw;padding-right:6vw}.compact-services .services-intro{grid-column:1/-1}}
 @media(max-width:600px){main>.compact-services.section{grid-template-columns:1fr;gap:12px;padding-top:38px;padding-bottom:42px}.compact-services .services-intro h2{font-size:36px}.compact-services .services-intro>p:last-child{font-size:16px}main>.compact-services.section article{padding:23px}.verification-section.section{padding-top:38px;padding-bottom:38px}.founder-credibility.section{padding-top:38px;padding-bottom:38px}.home-cta.section{padding-top:40px;padding-bottom:40px}}
+
+
+/* Homepage visual restoration: animated supply chain + Verification First artwork */
+.flow-experience.section{display:block;position:relative;isolation:isolate}
+.flow-canvas{overflow-x:auto}
+.flow-svg{display:block;width:100%;height:auto}
+.flow-svg .flow-node{cursor:pointer}
+.flow-controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.flow-step{cursor:pointer}
+.verification-section.section{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:center}
+.verification-visual{width:100%;aspect-ratio:1705 / 900;min-height:220px;border-radius:18px;border:1px solid rgba(18,59,43,.1);background:#f3f0e7 url('../img/verification-first.png') center center / contain no-repeat;box-shadow:0 16px 40px rgba(18,59,43,.10)}
+@media(max-width:760px){.verification-section.section{grid-template-columns:1fr;gap:26px}.verification-visual{aspect-ratio:1705 / 900;min-height:0}}
