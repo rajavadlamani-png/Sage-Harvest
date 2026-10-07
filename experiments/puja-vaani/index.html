@@ -1,101 +1,200 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Puja · Vaani Voice Lab</title>
 <style>
 :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#173d2d;background:#f5f1e8}
-*{box-sizing:border-box}body{margin:0}.wrap{max-width:1180px;margin:auto;padding:32px 20px 60px}
-header{background:#173d2d;color:#fff;border-radius:20px;padding:28px;margin-bottom:24px}
-h1{margin:0 0 8px;font-size:clamp(28px,4vw,44px)}h2{margin:0 0 8px}p{line-height:1.6}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:1180px;margin:auto;padding:28px 18px 56px}
+header{background:#173d2d;color:#fff;border-radius:20px;padding:26px;margin-bottom:20px}h1{margin:0 0 8px;font-size:clamp(28px,4vw,44px)}h2{margin:0 0 8px;font-size:20px}p{line-height:1.55}
 .note,.lab{background:#fff;border:1px solid #d9d1c0;border-radius:16px;padding:18px;margin:18px 0}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{background:#fff;border:1px solid #d9d1c0;border-radius:18px;overflow:hidden}
-.card h2{font-size:20px;margin:0;padding:18px 20px 8px}.card p{padding:0 20px;margin:0 0 14px;color:#58665d}
-.demo{min-height:620px;border-top:1px solid #e6e0d5;background:#faf9f5}iframe{display:block;width:100%;height:620px;border:0}
-.badge{display:inline-block;border-radius:999px;padding:5px 10px;background:#e9efe8;font-size:12px;font-weight:700;margin-right:6px}
-button{border:0;border-radius:10px;padding:11px 15px;background:#173d2d;color:#fff;font-weight:700;cursor:pointer}
-button:disabled{opacity:.55;cursor:wait}.status{margin-top:12px;padding:12px;border-radius:10px;background:#f3f6f2;font-size:14px;white-space:pre-wrap}
-pre{overflow:auto;background:#17201b;color:#eef5ef;padding:14px;border-radius:10px;font-size:12px;max-height:300px}
-footer{margin-top:22px;color:#66736b;font-size:13px}
-@media(max-width:800px){.grid{grid-template-columns:1fr}.demo,iframe{height:620px}}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{background:#fff;border:1px solid #d9d1c0;border-radius:18px;overflow:hidden}
+.card p{padding:0 18px;margin:0 0 14px;color:#58665d}.demo{min-height:560px;border-top:1px solid #e6e0d5;background:#faf9f5}
+iframe{display:block;width:100%;height:560px;border:0}.badge{display:inline-block;border-radius:999px;padding:5px 10px;background:#e9efe8;font-size:12px;font-weight:700;margin:0 6px 8px 0}
+button{border:0;border-radius:10px;padding:11px 15px;background:#173d2d;color:#fff;font-weight:700;cursor:pointer;margin:4px 6px 4px 0}button:disabled{opacity:.5;cursor:wait}
+.status{margin-top:10px;padding:12px;border-radius:10px;background:#f3f6f2;font-size:14px;white-space:pre-wrap}
+pre{overflow:auto;background:#17201b;color:#eef5ef;padding:14px;border-radius:10px;font-size:12px;max-height:320px}
+.transcript,.answer{padding:14px;border:1px solid #ddd6c8;border-radius:10px;background:#fbfaf7;margin-top:10px;min-height:48px;white-space:pre-wrap}
+small{color:#66736b}.danger{color:#8b3d2f}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.demo,iframe{height:520px}}
 </style>
 </head>
-<body>
-<div class="wrap">
-<header>
-<div class="badge">PUJA · EXPERIMENTAL</div><div class="badge">VAANI / IISc</div>
-<h1>Puja Voice Lab</h1>
-<p>This is an isolated prototype. The live Sage Harvest Puja assistant is not changed by this page.</p>
-</header>
+<body><div class="wrap">
+<header><span class="badge">PUJA · EXPERIMENTAL</span><span class="badge">VAANI / IISc</span>
+<h1>Puja Voice Lab</h1><p>Isolated prototype only. Production Puja 33 is untouched.</p></header>
 
-<section class="note">
-<strong>What we are testing</strong>
-<p><b>Target architecture:</b> SraVaani ASR → Sage Harvest retrieval → Gemini text → DhVaani female TTS.</p>
-<p><b>Browser-only:</b> no software or model files are installed on the corporate laptop. Hugging Face hosts the Vaani demos, and the Gradio JavaScript client can connect to hosted Gradio Spaces directly from a browser.</p>
-</section>
+<section class="note"><b>Target architecture</b>
+<p>SraVaani ASR → Sage Harvest published-knowledge retrieval → Gemini text answer → DhVaani female TTS.</p>
+<p>No software is installed on the laptop. The Vaani services are hosted Gradio Spaces and the browser connects to them through the official Gradio JavaScript client. citeturn0search0turn0search1</p></section>
 
 <section class="lab">
-<h2>3. Vaani API connectivity test</h2>
-<p>First we verify that the browser can discover the public Gradio APIs. This does not call Gemini and does not touch production Puja.</p>
-<button id="probe" type="button">Connect to Vaani APIs</button>
-<div id="status" class="status">Not tested yet.</div>
+<h2>3. End-to-end voice pipeline</h2>
+<p>Discover the hosted APIs first. Then record one question in the browser. The prototype will try to transcribe it with SraVaani, ground the answer in the Sage Harvest knowledge file, send only that grounded context to the existing Sage Harvest Gemini text worker, and pass the answer to DhVaani for speech.</p>
+<button id="discover">1 · Discover Vaani APIs</button>
+<button id="ask" disabled>2 · Record & Ask Puja</button>
+<button id="stop" disabled>Stop recording</button>
+<div id="status" class="status">Not connected yet.</div>
+<div><b>Transcript</b><div id="transcript" class="transcript">—</div></div>
+<div><b>Puja answer</b><div id="answer" class="answer">—</div></div>
 <pre id="api" hidden></pre>
 </section>
 
 <div class="grid">
-<section class="card">
-<h2>1. SraVaani · Live ASR</h2>
-<p>Speak naturally and check whether streaming transcription captures complete questions without cutting you off.</p>
-<div class="demo"><iframe src="https://huggingface.co/spaces/ARTPARK-IISc/SraVaani-live-Demo?embed=true" title="SraVaani live speech recognition"></iframe></div>
-</section>
-
-<section class="card">
-<h2>2. DhVaani · Female Voice</h2>
-<p>The official demo exposes a built-in <b>Female</b> speaker option. DhVaani supports 27 Indian languages, including English and Telugu.</p>
-<div class="demo"><iframe src="https://huggingface.co/spaces/ARTPARK-IISc/DhVaani-Demo?embed=true" title="DhVaani text to speech"></iframe></div>
-</section>
+<section class="card"><h2>1. SraVaani · Live ASR</h2><p>Official demo for checking Indian-language/English speech recognition quality.</p>
+<div class="demo"><iframe src="https://huggingface.co/spaces/ARTPARK-IISc/SraVaani-live-Demo?embed=true" title="SraVaani live speech recognition"></iframe></div></section>
+<section class="card"><h2>2. DhVaani · Female Voice</h2><p>Official demo for checking the available female voice quality.</p>
+<div class="demo"><iframe src="https://huggingface.co/spaces/ARTPARK-IISc/DhVaani-Demo?embed=true" title="DhVaani text to speech"></iframe></div></section>
 </div>
-
-<footer>
-Prototype branch: <b>puja-vaani-prototype-20261008</b> · Production Puja 33 remains untouched.
-</footer>
+<small>Branch: puja-vaani-prototype-20261008 · No production files are modified.</small>
 </div>
 
 <script type="module">
-import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
+import { Client, handle_file } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
 
-const probe = document.getElementById("probe");
-const status = document.getElementById("status");
-const api = document.getElementById("api");
+const ASR_SPACE="ARTPARK-IISc/SraVaani-live-Demo";
+const TTS_SPACE="ARTPARK-IISc/DhVaani-Demo";
+const GEMINI_WORKER="https://sageharvest-puja.raja-vadlamani.workers.dev/";
+const KNOWLEDGE_URL="../../assets/data/puja-knowledge.json";
 
-function compact(info){
-  const out = {};
-  if(info && info.named_endpoints) out.named_endpoints = info.named_endpoints;
-  if(info && info.unnamed_endpoints) out.unnamed_endpoints = info.unnamed_endpoints;
-  return out;
-}
+const $=id=>document.getElementById(id);
+const discoverBtn=$("discover"),askBtn=$("ask"),stopBtn=$("stop"),status=$("status"),apiBox=$("api"),transcriptBox=$("transcript"),answerBox=$("answer");
+let asrClient=null,ttsClient=null,asrInfo=null,ttsInfo=null,knowledge=null,recorder=null,chunks=[],recordingStop=null;
 
-probe.addEventListener("click", async () => {
-  probe.disabled = true;
-  status.textContent = "Connecting to SraVaani and DhVaani…";
-  api.hidden = true;
-  try {
-    const [asr, tts] = await Promise.all([
-      Client.connect("ARTPARK-IISc/SraVaani-live-Demo"),
-      Client.connect("ARTPARK-IISc/DhVaani-Demo")
-    ]);
-    const [asrInfo, ttsInfo] = await Promise.all([asr.view_api(), tts.view_api()]);
-    const result = { SraVaani: compact(asrInfo), DhVaani: compact(ttsInfo) };
-    api.textContent = JSON.stringify(result, null, 2);
-    api.hidden = false;
-    status.textContent = "Vaani APIs are reachable from the browser. The next engineering step is to wire the discovered ASR/TTS endpoints into the Sage Harvest answer pipeline.";
-  } catch (err) {
-    status.textContent = "Browser API connection did not complete. The embedded official demos can still be used. Details:\n" + (err?.message || String(err));
-  } finally {
-    probe.disabled = false;
+function setStatus(s){status.textContent=s}
+function componentName(x){return String(x?.component||x?.type||x?.label||"").toLowerCase()}
+function endpointScore(ep,kind){
+  const ps=ep?.parameters||[];
+  const rs=ep?.returns||[];
+  const text=JSON.stringify(ep).toLowerCase();
+  let score=0;
+  if(kind==="asr"){
+    if(/audio|microphone|record/.test(text))score+=8;
+    if(ps.some(p=>/audio|microphone|record/.test(componentName(p))))score+=10;
+    if(rs.some(r=>/text|string|textbox/.test(componentName(r))))score+=4;
+  }else{
+    if(/audio|speech|tts/.test(text))score+=5;
+    if(ps.some(p=>/textbox|text|textarea/.test(componentName(p))))score+=8;
+    if(rs.some(r=>/audio/.test(componentName(r))))score+=10;
   }
-});
+  return score;
+}
+function chooseEndpoint(info,kind){
+  const all=[...(Object.entries(info?.named_endpoints||{}).map(([name,e])=>({name,...e}))),
+             ...(Object.entries(info?.unnamed_endpoints||{}).map(([name,e])=>({name,...e})))];
+  return all.map(e=>({...e,score:endpointScore(e,kind)})).sort((a,b)=>b.score-a.score)[0]||null;
+}
+function endpointSummary(info){
+  const all=[...(Object.entries(info?.named_endpoints||{}).map(([name,e])=>({name,...e}))),
+             ...(Object.entries(info?.unnamed_endpoints||{}).map(([name,e])=>({name,...e})))];
+  return all.map(e=>({endpoint:e.name,parameters:e.parameters||[],returns:e.returns||[]})); 
+}
+async function discover(){
+  discoverBtn.disabled=true;setStatus("Connecting to SraVaani and DhVaani and reading their current APIs…");
+  try{
+    [asrClient,ttsClient]=await Promise.all([Client.connect(ASR_SPACE),Client.connect(TTS_SPACE)]);
+    [asrInfo,ttsInfo]=await Promise.all([asrClient.view_api(),ttsClient.view_api()]);
+    const asrEp=chooseEndpoint(asrInfo,"asr"),ttsEp=chooseEndpoint(ttsInfo,"tts");
+    apiBox.textContent=JSON.stringify({SraVaani:endpointSummary(asrInfo),DhVaani:endpointSummary(ttsInfo),selected:{asr:asrEp?.name||null,tts:ttsEp?.name||null}},null,2);
+    apiBox.hidden=false;
+    if(!asrEp||asrEp.score<8){setStatus("Connected, but I could not safely identify a microphone/audio ASR endpoint. The raw API description is shown below.");return;}
+    if(!ttsEp||ttsEp.score<10){setStatus("Connected, but I could not safely identify a text-to-audio TTS endpoint. The raw API description is shown below.");return;}
+    askBtn.disabled=false;setStatus("Vaani APIs discovered. Ready for one browser microphone test.");
+  }catch(e){setStatus("Vaani API discovery failed. The official embedded demos remain available below.\n"+(e?.message||String(e)));}
+  finally{discoverBtn.disabled=false}
+}
+function startRecording(){
+  if(!navigator.mediaDevices?.getUserMedia){setStatus("This browser does not expose microphone access.");return;}
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    chunks=[];recorder=new MediaRecorder(stream);
+    recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
+    recorder.onstop=()=>{stream.getTracks().forEach(t=>t.stop());const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});runVoiceTurn(blob)};
+    recorder.start();askBtn.disabled=true;stopBtn.disabled=false;transcriptBox.textContent="Listening…";answerBox.textContent="—";setStatus("Recording. Speak your complete question, then press Stop recording.");
+  }).catch(e=>setStatus("Microphone permission was not available.\n"+(e?.message||String(e))));
+}
+function stopRecording(){if(recorder&&recorder.state!=="inactive")recorder.stop();stopBtn.disabled=true}
+function firstString(value){
+  if(typeof value==="string"&&value.trim())return value.trim();
+  if(Array.isArray(value)){for(const x of value){const y=firstString(x);if(y)return y}}
+  if(value&&typeof value==="object"){for(const k of ["text","transcription","transcript","value","label"]){const y=firstString(value[k]);if(y)return y}}
+  return "";
+}
+function firstAudio(value){
+  if(Array.isArray(value)){for(const x of value){const y=firstAudio(x);if(y)return y}}
+  if(value&&typeof value==="object"){
+    if(typeof value.url==="string"&&/\.(wav|mp3|ogg|webm|m4a)(\?|$)/i.test(value.url))return value.url;
+    if(typeof value.path==="string"&&/\.(wav|mp3|ogg|webm|m4a)(\?|$)/i.test(value.path))return value.path;
+    if(typeof value.url==="string")return value.url;
+  }
+  return typeof value==="string"&&/^https?:\/\//.test(value)?value:"";
+}
+function payloadFor(ep,blob,kind){
+  const ps=ep.parameters||[];
+  if(!ps.length)return [];
+  return ps.map(p=>{
+    const c=componentName(p);
+    if(kind==="asr"&&/audio|microphone|record/.test(c))return handle_file(blob);
+    if(kind==="tts"&&/textbox|text|textarea/.test(c))return currentAnswer;
+    if(kind==="tts"&&/dropdown|radio/.test(c))return null;
+    return null;
+  });
+}
+function selected(info,kind){return chooseEndpoint(info,kind)}
+let currentAnswer="";
+async function retrieveContext(q){
+  if(!knowledge){const r=await fetch(KNOWLEDGE_URL,{cache:"no-store"});if(!r.ok)throw new Error("Sage Harvest knowledge could not be loaded.");knowledge=await r.json();}
+  const entries=Array.isArray(knowledge?.entries)?knowledge.entries:[];
+  const nq=String(q).toLowerCase().replace(/[^a-z0-9\s-]/g," ").replace(/\s+/g," ").trim();
+  const routes=[
+    [["career","careers","work with sage harvest","join sage harvest","associate consultant","subject matter expert","strategic partner"],["careers.html"]],
+    [["service","services","consulting"],["services.html"]],
+    [["digital","ai","artificial intelligence"],["digital-ai.html"]],
+    [["sustainability","climate","carbon","mrv"],["sustainability.html"]],
+    [["international","export","cross border","india africa"],["international-expansion.html"]],
+    [["m&a","acquisition","due diligence"],["ma-due-diligence.html"]],
+    [["founder","raja vadlamani","principal advisor"],["founder.html","about.html"]],
+    [["contact","get in touch","talk to us"],["contact.html"]]
+  ];
+  const route=routes.find(([keys])=>keys.some(k=>nq.includes(k)));
+  let matches=entries;
+  if(route){const pages=new Set(route[1]);matches=entries.filter(e=>pages.has(String(e.url||"").split("/").pop()));}
+  else{
+    const terms=nq.split(/\s+/).filter(x=>x.length>2);
+    matches=entries.map(e=>{const hay=(e.page_title+" "+e.section_heading+" "+(e.keywords||[]).join(" ")+" "+(e.synonyms||[]).join(" ")+" "+e.text).toLowerCase();let s=0;for(const t of terms)if(hay.includes(t))s++;return {...e,_s:s}}).filter(e=>e._s>0).sort((a,b)=>b._s-a._s).slice(0,6);
+  }
+  if(!matches.length)return "";
+  return matches.slice(0,6).map(e=>"PAGE TITLE: "+e.page_title+"\nSECTION: "+e.section_heading+"\nSOURCE URL: "+e.url+"\nPUBLISHED TEXT: "+e.text).join("\n\n");
+}
+async function askGemini(q,ctx){
+  if(!ctx)return "I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.";
+  const prompt="You are Puja, the AI guide for Sage Harvest Agro Pvt. Limited. Answer the visitor using ONLY the published Sage Harvest entries below. Do not use outside knowledge, assumptions or invented facts. Be warm, professional and concise. If the entries do not clearly answer the question, say exactly: I’m sorry, that information is not available in the published Sage Harvest website content. Please use the Contact page for further information.\n\nPUBLISHED SAGE HARVEST ENTRIES:\n"+ctx+"\n\nVISITOR QUESTION:\n"+q;
+  const r=await fetch(GEMINI_WORKER,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:prompt})});
+  const d=await r.json().catch(()=>({}));if(!r.ok||!d.answer)throw new Error(d.error||"Gemini text answer failed.");return d.answer;
+}
+async function speak(answer){
+  const ep=selected(ttsInfo,"tts");if(!ep)throw new Error("No TTS endpoint was identified.");
+  const params=payloadFor(ep,null,"tts");
+  const result=await ttsClient.predict(ep.name,params);
+  const url=firstAudio(result?.data);
+  if(!url)throw new Error("DhVaani returned no browser-playable audio in its API response.");
+  const audio=new Audio(url);audio.play().catch(()=>{});return true;
+}
+async function runVoiceTurn(blob){
+  askBtn.disabled=true;
+  try{
+    const ep=selected(asrInfo,"asr");if(!ep)throw new Error("No ASR endpoint was identified.");
+    setStatus("Sending the recorded speech to SraVaani…");
+    const result=await asrClient.predict(ep.name,payloadFor(ep,blob,"asr"));
+    const q=firstString(result?.data);
+    if(!q)throw new Error("SraVaani returned no readable transcript. The API response is shown in the diagnostics.");
+    transcriptBox.textContent=q;
+    setStatus("Retrieving Sage Harvest published knowledge and generating the grounded answer…");
+    const ctx=await retrieveContext(q);currentAnswer=await askGemini(q,ctx);answerBox.textContent=currentAnswer;
+    setStatus("Sending the answer to DhVaani female TTS…");
+    await speak(currentAnswer);
+    setStatus("Complete. One full voice turn has passed through the prototype.");
+  }catch(e){setStatus("The end-to-end test stopped safely.\n"+(e?.message||String(e)));}
+  finally{askBtn.disabled=false}
+}
+discoverBtn.addEventListener("click",discover);askBtn.addEventListener("click",startRecording);stopBtn.addEventListener("click",stopRecording);
 </script>
-</body>
-</html>
+</body></html>
