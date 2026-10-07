@@ -812,9 +812,10 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     if(!voiceRecognitionWanted||listening||voiceRecognitionStarting||responsePending)return;
     const Recognition=SpeechRecognitionClass||window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!Recognition)return;
+    let recognition=null;
     try{
       voiceRecognitionStarting=true;
-      const recognition=new Recognition();
+      recognition=new Recognition();
       voiceRecognition=recognition;
       recognition.continuous=true;
       recognition.interimResults=true;
@@ -873,7 +874,14 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         if(!recognition.__submitting&&transcript&&!responsePending){
           recognition.__submitting=true;
           try{await groundVoiceTurnFromTranscript(transcript);}
-          catch(e){console.warn("Puja voice turn failed",e);addMessage("Puja is temporarily unavailable. Please try again.","bot");}
+          catch(e){
+            console.warn("Puja voice turn failed",e);
+            responsePending=false;
+            activeVoiceTurnId=null;
+            pujaDebugTurn=null;
+            setState(null,"Listening…");
+            if(voiceRecognitionWanted)setTimeout(()=>startSpeechRecognitionCycle(),300);
+          }
         }else if(!transcript&&!responsePending){
           addMessage("I didn't quite catch that. Could you rephrase?","bot");
           startSpeechRecognitionCycle();
