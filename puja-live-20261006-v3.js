@@ -585,7 +585,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
             }
 
             if(voiceSpeechEnded&&!voiceGroundingSent){
-              Promise.resolve().then(()=>groundVoiceTurnFromTranscript(pujaDebugTurn?.transcript||pendingVoiceTranscript));
+              scheduleVoiceGrounding("final_transcript");
             }
           }
         }
@@ -722,8 +722,11 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
         : (qctx.smallTalk
           ? ("This is a simple courtesy/greeting. Respond naturally as Puja without introducing unsupported factual claims.\n\nVISITOR: "+q)
           : ("REPHRASE BEFORE REFUSAL — The visitor's speech transcript may contain recognition errors. First silently rephrase the question to the closest meaning supported by the published Sage Harvest website context. Do not add or invent facts while rephrasing. If the published website still does not clearly answer the rephrased question, speak exactly: \""+noKnowledgeAnswer()+"\"\n\nVISITOR QUESTION: "+q+"\n\nLOCALLY REPAIRED QUESTION IF ANY: "+(qctx.rephrasedQuery||q)));
+      groundingInterruptExpected=true;
       socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:groundingText}]}],turnComplete:true}}));
-      setState(null,"Puja is checking the Sage Harvest website…");
+      suppressPlayback=false;
+      pujaDebug("grounding_sent_playback_released",{turnId:pujaDebugTurn?.id});
+      setState(null,"Puja is answering…");
     }catch(e){
       voiceGroundingSent=false;
       suppressPlayback=false;
@@ -888,6 +891,7 @@ The locally loaded published Sage Harvest knowledge is the only factual website 
       pujaDebug("speech_end",{turnId:pujaDebugTurn.id,reason:"activityEnd_sent",transcript:pujaDebugTurn.transcript});
       try{
         socket.send(JSON.stringify({realtimeInput:{activityEnd:{}}}));
+        scheduleVoiceGrounding("activity_end");
       }catch(_){}
     }
 
