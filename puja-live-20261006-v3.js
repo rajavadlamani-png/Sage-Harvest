@@ -532,10 +532,12 @@
   async function startMicrophone(){
     if(listening)return;
     try{
-      await ensureSocket();
       if(!navigator.mediaDevices?.getUserMedia){
         throw new Error("Microphone access is not supported by this browser.");
       }
+
+      // Request microphone access first. Do not make the user wait for
+      // Gemini Live/WebSocket setup before the browser can show its prompt.
       microphoneStream=await navigator.mediaDevices.getUserMedia({
         audio:{
           channelCount:1,
@@ -544,14 +546,18 @@
           autoGainControl:true
         }
       });
+
       const AudioContextClass=window.AudioContext||window.webkitAudioContext;
       if(!AudioContextClass)throw new Error("Microphone audio is not supported by this browser.");
+
       microphoneContext=new AudioContextClass();
       if(microphoneContext.state==="suspended")await microphoneContext.resume();
+
       microphoneSource=microphoneContext.createMediaStreamSource(microphoneStream);
       microphoneProcessor=microphoneContext.createScriptProcessor(4096,1,1);
       const silentGain=microphoneContext.createGain();
       silentGain.gain.value=0;
+
       microphoneProcessor.onaudioprocess=event=>{
         if(!listening||!socket||socket.readyState!==WebSocket.OPEN)return;
         const inputBuffer=event.inputBuffer.getChannelData(0);
@@ -571,11 +577,18 @@
           console.warn("Puja microphone audio could not be sent",e);
         }
       };
+
       microphoneSource.connect(microphoneProcessor);
       microphoneProcessor.connect(silentGain);
       silentGain.connect(microphoneContext.destination);
+
       listening=true;
+      mic?.classList.add("active");
       setState("listening","Listening…");
+
+      // Connect after microphone capture is active.
+      // Audio is buffered by the callback until the Live socket is ready.
+      await ensureSocket();
     }catch(e){
       console.warn("Puja microphone could not start",e);
       stopMicrophone();
@@ -586,6 +599,7 @@
 
   function stopMicrophone(){
     listening=false;
+    mic?.classList.remove("active");
     try{microphoneProcessor?.disconnect();}catch(_){}
     try{microphoneSource?.disconnect();}catch(_){}
     try{microphoneStream?.getTracks().forEach(track=>track.stop());}catch(_){}
