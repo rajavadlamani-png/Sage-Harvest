@@ -876,7 +876,14 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
           }
           if(finalText){
             voiceRecognition.__finalTranscript=(voiceRecognition.__finalTranscript+" "+finalText).trim();
-            const transcript=voiceRecognition.__finalTranscript;
+          }
+          const display=((voiceRecognition.__finalTranscript||"")+" "+interim).trim();
+          if(display){
+            if(!inputRow)inputRow=addMessage(display,"user");else inputRow.textContent=display;
+            // Submit from the text actually visible to the visitor. In Edge,
+            // SpeechRecognition may leave a question as interim text and never
+            // deliver a final result before ending the recognition segment.
+            const transcript=display;
             if(voiceFinalTimer)clearTimeout(voiceFinalTimer);
             voiceFinalTimer=setTimeout(async()=>{
               voiceFinalTimer=null;
@@ -884,16 +891,15 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
               const q=String(transcript||"").trim();
               if(!q)return;
               voiceRecognition.__finalTranscript="";
+              if(inputRow){inputRow=null;}
               try{
                 await groundVoiceTurnFromTranscript(q);
               }catch(e){
                 console.warn("Puja voice turn failed",e);
                 addMessage(e.message||"Puja is temporarily unavailable. Please try again.","bot");
               }
-            },650);
+            },900);
           }
-          const display=((voiceRecognition.__finalTranscript||"")+" "+interim).trim();
-          if(display){if(!inputRow)inputRow=addMessage(display,"user");else inputRow.textContent=display;}
         };
         voiceRecognition.onerror=event=>{
           listening=false;voiceRecognitionStarting=false;
@@ -931,10 +937,12 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
             mic?.classList.remove("active");
             mic?.setAttribute("aria-pressed","false");
           }
-          if(voiceFinalTimer){clearTimeout(voiceFinalTimer);voiceFinalTimer=null;}
           const transcript=(voiceRecognition.__finalTranscript||"").trim();
           voiceRecognition.__finalTranscript="";
           if(!voiceRecognitionWanted)return;
+          // Do not cancel a pending silence-submission timer here. The browser
+          // may end a recognition segment immediately after the final/interim
+          // transcript is delivered. The timer is responsible for submitting it.
           if(responsePending){
             // Keep the user-activated recognition session alive while Puja speaks.
             // Do not use startSpeechRecognitionCycle() here because that helper
