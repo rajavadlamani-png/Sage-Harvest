@@ -1105,10 +1105,14 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     if(!voices.length)return null;
     const english=voices.filter(v=>/^en(?:-|_)/i.test(String(v.lang||"")));
     const pool=english.length?english:voices;
-    const preferred=/(jenny.*(online|natural)|aria.*(online|natural)|ava.*(online|natural)|sara.*(online|natural)|zira|samantha|hazel|susan|sarah|sonia|libby|emily|emma|olivia)/i;
-    return pool.find(v=>preferred.test(String(v.name||"")))||
-      pool.find(v=>!/(guy|david|mark|daniel|george|ryan|male|man)/i.test(String(v.name||"")))||
-      pool.find(v=>v.default)||pool[0]||null;
+    // Never silently fall back to the browser default: on Windows/Edge that
+    // can be a male voice. Prefer known female Microsoft/Apple voices.
+    const female=/(jenny|zira|aria|ava|sara|samantha|hazel|susan|sarah|sonia|libby|emily|emma|olivia|female|woman)/i;
+    const male=/(guy|david|mark|daniel|george|ryan|male|man)/i;
+    return pool.find(v=>female.test(String(v.name||""))) ||
+      pool.find(v=>!male.test(String(v.name||"")) && /natural|online/i.test(String(v.name||""))) ||
+      pool.find(v=>!male.test(String(v.name||"")) && /^en(?:-|_)/i.test(String(v.lang||""))) ||
+      null;
   }
 
   function speakInstantIntro(){
@@ -1117,17 +1121,32 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     try{
       const synth=window.speechSynthesis;
       synth.cancel();
-      const utterance=new SpeechSynthesisUtterance(text);
-      const voice=selectIntroFemaleVoice();
-      if(voice)utterance.voice=voice;
-      utterance.lang=voice?.lang||"en-US";
-      utterance.rate=0.98;
-      utterance.pitch=1.06;
-      utterance.volume=1;
-      utterance.onstart=()=>setState("speaking","Puja is speaking");
-      utterance.onend=()=>setState("listening","Listening…");
-      utterance.onerror=()=>setState("listening","Listening…");
-      synth.speak(utterance);
+      const speak=()=>{
+        const voice=selectIntroFemaleVoice();
+        if(!voice){
+          console.warn("Puja: no female English browser voice is available yet");
+          return false;
+        }
+        const utterance=new SpeechSynthesisUtterance(text);
+        utterance.voice=voice;
+        utterance.lang=voice.lang||"en-US";
+        utterance.rate=0.98;
+        utterance.pitch=1.06;
+        utterance.volume=1;
+        utterance.onstart=()=>setState("speaking","Puja is speaking");
+        utterance.onend=()=>setState("listening","Listening…");
+        utterance.onerror=()=>setState("listening","Listening…");
+        synth.speak(utterance);
+        return true;
+      };
+      if(speak())return;
+      let attempts=0;
+      const retry=()=>{
+        if(++attempts>8)return;
+        if(speak())return;
+        setTimeout(retry,80);
+      };
+      setTimeout(retry,40);
     }catch(e){console.warn("Puja instant intro failed",e);}
   }
 
