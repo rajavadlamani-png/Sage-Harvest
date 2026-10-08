@@ -967,6 +967,12 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       try{sessionStorage.removeItem("pujaVoiceMuted");}catch(_){}
       if(stopBtn)stopBtn.textContent="Stop voice";
       closedByUser=false;
+
+      // The Ask Puja button itself is a direct user gesture. Start browser
+      // speech recognition immediately, before any async Live connection work,
+      // so the browser can associate microphone permission with that gesture.
+      startMicrophone();
+
       setState(null,"Starting Puja…");
       await ensureSocket();
     }catch(e){
