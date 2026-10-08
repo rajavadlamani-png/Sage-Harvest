@@ -257,20 +257,28 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   async function getQuestionContext(value){
     await ensureKnowledge();
     if(isGreetingOrCourtesy(value))return {matches:[],context:SITE_KNOWLEDGE,smallTalk:true,rephrasedQuery:String(value||"")};
-    const repaired=repairSpeechQuery(value);
-    const candidates=[String(value||""),repaired.query].filter((v,i,a)=>v&&a.indexOf(v)===i);
-    let matches=[];let usedQuery=String(value||"");
-    for(const candidate of candidates){
-      const routed=routedKnowledge(candidate);
-      const found=routed.length?routed:matchKnowledge(candidate);
-      if(found.length){matches=found;usedQuery=candidate;break;}
-    }
+
+    const original=String(value||"").trim();
+
+    // Fast path for normal questions. Avoid the expensive speech-repair pass
+    // unless ordinary routing/keyword matching fails.
+    let matches=routedKnowledge(original);
+    if(!matches.length)matches=matchKnowledge(original);
+
     if(!matches.length){
-      matches=fuzzyKnowledgeMatches(repaired.query);
-      if(matches.length)usedQuery=repaired.query;
+      const repaired=repairSpeechQuery(original);
+      if(repaired.query!==original){
+        matches=routedKnowledge(repaired.query);
+        if(!matches.length)matches=matchKnowledge(repaired.query);
+      }
+      if(!matches.length)matches=fuzzyKnowledgeMatches(repaired.query);
+      if(!matches.length)return {matches,context:"",smallTalk:false,rephrasedQuery:original,repairChanges:repaired.changes};
+      const context=SITE_KNOWLEDGE+"\n\nCURRENT MATCHED PUBLISHED SITE ENTRIES — USE ONLY THESE ENTRIES FOR FACTUAL CONTENT IN THIS ANSWER. Do not use outside knowledge, assumptions or any factual detail not supported by these entries. If these entries do not clearly answer the question, say so and direct the visitor to contact.html.\n\n"+formatMatchedKnowledge(matches);
+      return {matches,context,smallTalk:false,rephrasedQuery:repaired.query,repairChanges:repaired.changes};
     }
-    if(!matches.length)return {matches,context:"",smallTalk:false,rephrasedQuery:usedQuery,repairChanges:repaired.changes};
-    return {matches,context:SITE_KNOWLEDGE+"\n\nCURRENT MATCHED PUBLISHED SITE ENTRIES — USE ONLY THESE ENTRIES FOR FACTUAL CONTENT IN THIS ANSWER. Do not use outside knowledge or any factual detail not supported by these entries. If these entries do not clearly answer the question, say so and direct the visitor to contact.html.\n\n"+formatMatchedKnowledge(matches),smallTalk:false,rephrasedQuery:usedQuery,repairChanges:repaired.changes};
+
+    const context=SITE_KNOWLEDGE+"\n\nCURRENT MATCHED PUBLISHED SITE ENTRIES — USE ONLY THESE ENTRIES FOR FACTUAL CONTENT IN THIS ANSWER. Do not use outside knowledge, assumptions or any factual detail not supported by these entries. If these entries do not clearly answer the question, say so and direct the visitor to contact.html.\n\n"+formatMatchedKnowledge(matches);
+    return {matches,context,smallTalk:false,rephrasedQuery:original,repairChanges:[]};
   }
 
   const INPUT_RATE = 16000, OUTPUT_RATE = 24000;
@@ -818,7 +826,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     try{
       const qctx=await getQuestionContext(q);
       pujaDebug("voice_fallback_send",{turnId:turn.id,transcript:q,matchCount:qctx.matches.length,smallTalk:!!qctx.smallTalk});
-      await sendFallbackText(q,true);
+      await sendFallbackText(q,true,qctx);
       responsePending=false;
       activeVoiceTurnId=null;
       pujaDebugFinishTurn();pujaDebugTurn=null;
