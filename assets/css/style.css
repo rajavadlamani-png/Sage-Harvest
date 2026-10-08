@@ -119,3 +119,24 @@
 .goal-list p{margin:0;color:#58665b;line-height:1.65}
 .goal-list strong{color:#173b2c}
 @media(max-width:760px){.purpose-grid{grid-template-columns:1fr}.purpose-card{padding:24px}.goal-list{grid-template-columns:1fr}.purpose-intro{text-align:left}.purpose-intro>p:last-child{margin:0}}
+
+
+/* Subtle sitewide page transition — keeps navigation feeling continuous without moving the layout. */
+body.page-transition-enter{
+  animation:sageHarvestPageEnter 220ms cubic-bezier(.22,.61,.36,1) both;
+}
+body.page-transition-exit{
+  animation:sageHarvestPageExit 170ms cubic-bezier(.4,0,1,1) both;
+}
+@keyframes sageHarvestPageEnter{
+  from{opacity:.72;transform:translateY(7px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes sageHarvestPageExit{
+  from{opacity:1;transform:translateY(0)}
+  to{opacity:.78;transform:translateY(-4px)}
+}
+@media(prefers-reduced-motion:reduce){
+  body.page-transition-enter,
+  body.page-transition-exit{animation:none}
+}
