@@ -286,7 +286,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   let outputContext=null, playbackSources=new Set(), nextPlayTime=0, playbackQueue=Promise.resolve(), playbackGeneration=0, fallbackAudioSource=null;
   let responsePending=false, responseSerial=0, lastVoiceTranscript="", lastVoiceTranscriptPerfMs=0;
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
-  let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
+  let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false, voiceFinalTimer=null;
   let audioChunksThisTurn=0, groundVoiceTurn=false, pendingVoiceTranscript="", voiceSpeechEnded=false, voiceGroundingTimer=null, groundingInterruptExpected=false;
 
   function setState(state,label){
@@ -874,7 +874,24 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
             // Ignore Puja's own speech/ambient speech while she is answering.
             return;
           }
-          if(finalText)voiceRecognition.__finalTranscript=(voiceRecognition.__finalTranscript+" "+finalText).trim();
+          if(finalText){
+            voiceRecognition.__finalTranscript=(voiceRecognition.__finalTranscript+" "+finalText).trim();
+            const transcript=voiceRecognition.__finalTranscript;
+            if(voiceFinalTimer)clearTimeout(voiceFinalTimer);
+            voiceFinalTimer=setTimeout(async()=>{
+              voiceFinalTimer=null;
+              if(!voiceRecognitionWanted||responsePending)return;
+              const q=String(transcript||"").trim();
+              if(!q)return;
+              voiceRecognition.__finalTranscript="";
+              try{
+                await groundVoiceTurnFromTranscript(q);
+              }catch(e){
+                console.warn("Puja voice turn failed",e);
+                addMessage(e.message||"Puja is temporarily unavailable. Please try again.","bot");
+              }
+            },650);
+          }
           const display=((voiceRecognition.__finalTranscript||"")+" "+interim).trim();
           if(display){if(!inputRow)inputRow=addMessage(display,"user");else inputRow.textContent=display;}
         };
@@ -914,6 +931,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
             mic?.classList.remove("active");
             mic?.setAttribute("aria-pressed","false");
           }
+          if(voiceFinalTimer){clearTimeout(voiceFinalTimer);voiceFinalTimer=null;}
           const transcript=(voiceRecognition.__finalTranscript||"").trim();
           voiceRecognition.__finalTranscript="";
           if(!voiceRecognitionWanted)return;
@@ -946,6 +964,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       startSpeechRecognitionCycle();
     }catch(e){
       voiceRecognitionWanted=false;listening=false;voiceRecognitionStarting=false;
+    if(voiceFinalTimer){clearTimeout(voiceFinalTimer);voiceFinalTimer=null;}
       mic?.removeAttribute("data-voice-enabled");mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
       console.warn("Puja microphone start failed",e);
       addMessage("Voice input could not start in this browser. Please use the text box below.","bot");
