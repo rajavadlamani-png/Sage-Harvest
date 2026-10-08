@@ -398,6 +398,9 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       }catch(_){}
     }
     if(!chunkCount)throw new Error("Puja voice stream returned no audio.");
+    // Wait until every queued PCM chunk has actually finished playing before
+    // returning control to SpeechRecognition.
+    await playbackQueue;
   }
 
   async function sendFallbackText(value,speak=false){
@@ -779,6 +782,13 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     },delay);
   }
 
+  function pauseRecognitionForResponse(){
+    const recognition=voiceRecognition;
+    listening=false;
+    voiceRecognitionStarting=false;
+    try{recognition?.stop();}catch(_){try{recognition?.abort();}catch(__){}}
+  }
+
   async function groundVoiceTurnFromTranscript(value){
     const q=String(value||"").trim();
     if(!q)return;
@@ -798,6 +808,9 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     }
     lastVoiceTranscript=q;lastVoiceTranscriptPerfMs=now;
     responsePending=true;responseSerial++;
+    // Do not let SpeechRecognition hear Puja's own answer. Recognition is
+    // restarted only after the complete streamed answer has finished playing.
+    pauseRecognitionForResponse();
     const turn=pujaDebugNewTurn("voice");
     activeVoiceTurnId=turn.id;
     turn.speechEndPerfMs=turn.speechEndPerfMs??performance.now();
@@ -811,11 +824,17 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       responsePending=false;
       activeVoiceTurnId=null;
       pujaDebugFinishTurn();pujaDebugTurn=null;
-      setState(null,"Listening…");
+      if(voiceRecognitionWanted){
+        setState(null,"Listening…");
+        startSpeechRecognitionCycle();
+      }else{
+        setState(null,"Puja · ready");
+      }
     }catch(e){
       responsePending=false;
       activeVoiceTurnId=null;
       console.warn("Puja voice response failed",e);
+      if(voiceRecognitionWanted)startSpeechRecognitionCycle();
       addMessage(e.message||"Puja is temporarily unavailable. Please try again.","bot");
       setState(null,"Puja · unavailable");
     }
@@ -1013,20 +1032,8 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
           // may end a recognition segment immediately after the final/interim
           // transcript is delivered. The timer is responsible for submitting it.
           if(responsePending){
-            // Keep the user-activated recognition session alive while Puja speaks.
-            // Do not use startSpeechRecognitionCycle() here because that helper
-            // intentionally blocks while responsePending is true.
-            setTimeout(()=>{
-              if(!voiceRecognitionWanted||!responsePending||listening||voiceRecognitionStarting||!voiceRecognition)return;
-              try{
-                voiceRecognitionStarting=true;
-                voiceRecognition.__finalTranscript="";
-                voiceRecognition.start();
-              }catch(e){
-                voiceRecognitionStarting=false;
-                console.warn("Puja speech recognition restart during response failed",e);
-              }
-            },80);
+            // Deliberately stay stopped while Puja is speaking. The response
+            // completion path restarts recognition after playback finishes.
             return;
           }
           if(transcript){
