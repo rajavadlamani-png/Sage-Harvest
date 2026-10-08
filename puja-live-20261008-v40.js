@@ -1099,56 +1099,6 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     setState(null,listening?"Listening…":"Voice muted · ready");
   }
 
-  function selectIntroFemaleVoice(){
-    if(!("speechSynthesis" in window))return null;
-    const voices=window.speechSynthesis.getVoices();
-    if(!voices.length)return null;
-    const english=voices.filter(v=>/^en(?:-|_)/i.test(String(v.lang||"")));
-    const pool=english.length?english:voices;
-    // Never silently fall back to the browser default: on Windows/Edge that
-    // can be a male voice. Prefer known female Microsoft/Apple voices.
-    const female=/(jenny|zira|aria|ava|sara|samantha|hazel|susan|sarah|sonia|libby|emily|emma|olivia|female|woman)/i;
-    const male=/(guy|david|mark|daniel|george|ryan|male|man)/i;
-    // Strict female-only selection. Never fall back to an unclassified
-    // voice because Edge may expose a male voice without a male-coded name.
-    return pool.find(v=>female.test(String(v.name||""))) || null;
-  }
-
-  function speakInstantIntro(){
-    const text="Hello, I’m Puja, your Sage Harvest assistant. How may I help you today?";
-    if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window))return;
-    try{
-      const synth=window.speechSynthesis;
-      synth.cancel();
-      const speak=()=>{
-        const voice=selectIntroFemaleVoice();
-        if(!voice){
-          console.warn("Puja: no female English browser voice is available yet");
-          return false;
-        }
-        const utterance=new SpeechSynthesisUtterance(text);
-        utterance.voice=voice;
-        utterance.lang=voice.lang||"en-US";
-        utterance.rate=0.98;
-        utterance.pitch=1.06;
-        utterance.volume=1;
-        utterance.onstart=()=>setState("speaking","Puja is speaking");
-        utterance.onend=()=>setState("listening","Listening…");
-        utterance.onerror=()=>setState("listening","Listening…");
-        synth.speak(utterance);
-        return true;
-      };
-      if(speak())return;
-      let attempts=0;
-      const retry=()=>{
-        if(++attempts>8)return;
-        if(speak())return;
-        setTimeout(retry,80);
-      };
-      setTimeout(retry,40);
-    }catch(e){console.warn("Puja instant intro failed",e);}
-  }
-
   function toggleMicrophone(){primeAudio();if(voiceRecognitionWanted)stopMicrophone();else startMicrophone();}
   async function openPanel(){
     try{
@@ -1163,14 +1113,8 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       // so the browser can associate microphone permission with that gesture.
       startMicrophone();
 
-      // Speak the welcome immediately; do not wait for Gemini Live or the
-      // knowledge base. The AI connection continues in the background.
-      setState("speaking","Puja is speaking");
-      speakInstantIntro();
-
-      ensureSocket().catch(e=>{
-        console.warn("Puja background Live connection failed",e);
-      });
+      setState(null,"Starting Puja…");
+      await ensureSocket();
     }catch(e){
       console.error("Puja session start failed",e);
       addMessage("Puja is temporarily unavailable. Please try again in a moment.","bot");
