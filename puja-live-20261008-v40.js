@@ -806,15 +806,17 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   }
 
   async function startMicrophone(){
-    if(listening||voiceRecognitionStarting)return;
+    if(voiceRecognitionWanted||listening||voiceRecognitionStarting)return;
     const SpeechRecognitionClass=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SpeechRecognitionClass){addMessage("Voice input isn't supported in this browser. Please use the text box below.","bot");setState(null,"Puja · text input ready");return;}
+    // Activate the control immediately on the user's click. Do not make the
+    // visual/button state depend on the asynchronous Gemini Live connection.
+    voiceRecognitionWanted=true;
+    mic?.setAttribute("data-voice-enabled","true");
+    mic?.classList.add("active");
+    mic?.setAttribute("aria-pressed","true");
     try{
       await ensureSocket();await resumeOutput();
-      voiceRecognitionWanted=true;
-      mic?.setAttribute("data-voice-enabled","true");
-      mic?.classList.add("active");
-      mic?.setAttribute("aria-pressed","true");
       if(!voiceRecognition){
         voiceRecognition=new SpeechRecognitionClass();
         voiceRecognition.continuous=true;voiceRecognition.interimResults=true;voiceRecognition.lang="en-US";voiceRecognition.maxAlternatives=1;
@@ -907,7 +909,9 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       }
       startSpeechRecognitionCycle();
     }catch(e){
-      voiceRecognitionWanted=false;listening=false;mic?.removeAttribute("data-voice-enabled");mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
+      voiceRecognitionWanted=false;listening=false;voiceRecognitionStarting=false;
+      mic?.removeAttribute("data-voice-enabled");mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
+      console.warn("Puja microphone start failed",e);
       addMessage("Voice input could not start in this browser. Please use the text box below.","bot");
     }
   }
@@ -941,7 +945,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     setState(null,listening?"Listening…":"Voice muted · ready");
   }
 
-  function toggleMicrophone(){primeAudio();if(listening)stopMicrophone();else startMicrophone();}
+  function toggleMicrophone(){primeAudio();if(voiceRecognitionWanted)stopMicrophone();else startMicrophone();}
   async function openPanel(){
     try{
       primeAudio();
