@@ -86,9 +86,16 @@
 @media(max-width:900px){.site-header .brand img.brand-logo{width:160px;height:48px;max-width:42vw;max-height:48px}}
 
 /* Future launch notice: clear availability date across public pages */
-.launch-notice{margin:0;padding:12px 20px;text-align:center;background:#f3f0e5;color:#25432f;border-bottom:1px solid rgba(37,67,47,.18);font-size:.94rem;line-height:1.5}
+.launch-notice{margin:0;padding:12px 20px;background:#f3f0e5;color:#25432f;border-bottom:1px solid rgba(37,67,47,.18);font-size:.94rem;line-height:1.5;overflow:hidden}
+.launch-notice-viewport{width:100%;overflow:hidden;white-space:nowrap}
+.launch-notice-track{display:inline-flex;align-items:center;min-width:max-content;animation:sageHarvestNoticeScroll 42s linear infinite;will-change:transform}
+.launch-notice-item{display:inline-block;padding-right:3.5rem}
 .launch-notice strong{font-weight:800}
-@media(max-width:700px){.launch-notice{padding:11px 14px;font-size:.86rem}}
+.launch-notice-separator{display:inline-block;padding-right:3.5rem;font-size:.85em;opacity:.55}
+.launch-notice:hover .launch-notice-track{animation-play-state:paused}
+@keyframes sageHarvestNoticeScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(max-width:700px){.launch-notice{padding:11px 14px;font-size:.86rem}.launch-notice-track{animation-duration:48s}}
+@media(prefers-reduced-motion:reduce){.launch-notice-viewport{overflow:auto;white-space:normal}.launch-notice-track{display:block;animation:none;white-space:normal}.launch-notice-item[aria-hidden="true"],.launch-notice-separator[aria-hidden="true"]{display:none}}
 
 
 /* Purpose, vision, mission and strategic goals on the About page */
