@@ -812,6 +812,9 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     try{
       await ensureSocket();await resumeOutput();
       voiceRecognitionWanted=true;
+      mic?.setAttribute("data-voice-enabled","true");
+      mic?.classList.add("active");
+      mic?.setAttribute("aria-pressed","true");
       if(!voiceRecognition){
         voiceRecognition=new SpeechRecognitionClass();
         voiceRecognition.continuous=true;voiceRecognition.interimResults=true;voiceRecognition.lang="en-US";voiceRecognition.maxAlternatives=1;
@@ -847,7 +850,19 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
           }
           if(event?.error!=="aborted"&&voiceRecognitionWanted){
             console.warn("Puja speech recognition error",event?.error);
-            setTimeout(()=>startSpeechRecognitionCycle(),350);
+            setTimeout(()=>{
+              if(!voiceRecognitionWanted||!voiceRecognition||listening||voiceRecognitionStarting)return;
+              if(responsePending){
+                try{
+                  voiceRecognitionStarting=true;
+                  voiceRecognition.__finalTranscript="";
+                  voiceRecognition.start();
+                }catch(e){
+                  voiceRecognitionStarting=false;
+                  console.warn("Puja speech recognition restart after error failed",e);
+                }
+              }else startSpeechRecognitionCycle();
+            },350);
           }
         };
         voiceRecognition.onend=async()=>{
@@ -892,7 +907,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       }
       startSpeechRecognitionCycle();
     }catch(e){
-      voiceRecognitionWanted=false;listening=false;mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
+      voiceRecognitionWanted=false;listening=false;mic?.removeAttribute("data-voice-enabled");mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
       addMessage("Voice input could not start in this browser. Please use the text box below.","bot");
     }
   }
@@ -909,6 +924,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
 
   function stopMicrophone(){
     voiceRecognitionWanted=false;listening=false;voiceRecognitionStarting=false;
+    mic?.removeAttribute("data-voice-enabled");
     const recognition=voiceRecognition;
     try{recognition?.stop();}catch(_){try{recognition?.abort();}catch(__){}}
     voiceRecognition=null;window.__pujaSpeechRecognition=null;
