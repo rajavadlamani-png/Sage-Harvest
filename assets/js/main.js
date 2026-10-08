@@ -99,3 +99,50 @@ document.addEventListener('DOMContentLoaded', function () {
   hero.addEventListener('focusout', start);
   start();
 });
+
+
+/* Sitewide page transitions: a restrained fade/lift between full-page navigations. */
+document.addEventListener('DOMContentLoaded', function () {
+  const body = document.body;
+  if (!body) return;
+
+  const reducedMotion = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!reducedMotion) {
+    body.classList.add('page-transition-enter');
+    window.setTimeout(() => body.classList.remove('page-transition-enter'), 280);
+  }
+
+  document.addEventListener('click', function (event) {
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const link = event.target.closest('a[href]');
+    if (!link) return;
+    if (link.target && link.target !== '_self') return;
+    if (link.hasAttribute('download')) return;
+
+    const rawHref = link.getAttribute('href');
+    if (!rawHref || rawHref.charAt(0) === '#') return;
+
+    let url;
+    try {
+      url = new URL(rawHref, window.location.href);
+    } catch (_) {
+      return;
+    }
+
+    if (url.origin !== window.location.origin) return;
+    if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+    if (reducedMotion) return;
+
+    event.preventDefault();
+    if (body.classList.contains('page-transition-exit')) return;
+
+    body.classList.add('page-transition-exit');
+    window.setTimeout(function () {
+      window.location.href = url.href;
+    }, 170);
+  });
+});
