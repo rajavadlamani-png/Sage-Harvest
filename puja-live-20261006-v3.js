@@ -839,6 +839,12 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         };
         voiceRecognition.onerror=event=>{
           listening=false;voiceRecognitionStarting=false;
+          // Keep the mic control visibly active while the user has enabled voice.
+          // SpeechRecognition can end/restart underneath the control during Gemini playback.
+          if(voiceRecognitionWanted){
+            mic?.classList.add("active");
+            mic?.setAttribute("aria-pressed","true");
+          }
           if(event?.error!=="aborted"&&voiceRecognitionWanted){
             console.warn("Puja speech recognition error",event?.error);
             setTimeout(()=>startSpeechRecognitionCycle(),350);
@@ -846,7 +852,15 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         };
         voiceRecognition.onend=async()=>{
           listening=false;voiceRecognitionStarting=false;
-          mic?.classList.remove("active");mic?.setAttribute("aria-pressed","false");
+          // Do not make the mic appear inactive merely because one recognition
+          // segment ended; voice remains enabled until the user toggles it off.
+          if(voiceRecognitionWanted){
+            mic?.classList.add("active");
+            mic?.setAttribute("aria-pressed","true");
+          }else{
+            mic?.classList.remove("active");
+            mic?.setAttribute("aria-pressed","false");
+          }
           const transcript=(voiceRecognition.__finalTranscript||"").trim();
           voiceRecognition.__finalTranscript="";
           if(!voiceRecognitionWanted)return;
