@@ -694,7 +694,21 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
 
   async function groundVoiceTurnFromTranscript(value){
     const q=String(value||"").trim();
-    if(!q||!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
+    if(!q)return;
+    // Recognition is independent of Gemini Live. If the browser captured the
+    // question before Live is ready, establish the Live session now rather
+    // than silently dropping the transcript.
+    try{
+      await ensureSocket();
+      await resumeOutput();
+    }catch(e){
+      console.warn("Puja Live unavailable after voice capture",e);
+      addMessage("Puja is temporarily unavailable. Please try again in a moment.","bot");
+      setState(null,"Puja · unavailable");
+      responsePending=false;
+      return;
+    }
+    if(!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
     const now=performance.now();
     if(q===lastVoiceTranscript&&now-lastVoiceTranscriptPerfMs<2500){
       pujaDebug("duplicate_voice_transcript_ignored",{transcript:q});
