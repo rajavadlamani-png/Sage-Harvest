@@ -665,8 +665,10 @@ body.diag-page .diagnostic-ip-global{box-shadow:0 -4px 18px rgba(23,59,44,.025)!
 }
 </style>
 <style>body.diag-page.diag-embed{padding-top:0!important}body.diag-page.diag-embed .diagnostic-header,body.diag-page.diag-embed .launch-notice,body.diag-page.diag-embed>footer{display:none!important}body.diag-page.diag-embed main{margin:0!important;padding:0!important}body.diag-page.diag-embed #intro{min-height:calc(100vh - 20px)!important}body.diag-page.diag-embed #diagnostic{padding-top:26px!important}body.diag-page.diag-embed .diagnostic-ip-global{z-index:20!important}@media(max-width:700px){body.diag-page.diag-embed #intro{min-height:calc(100vh - 10px)!important}}</style><style>
-/* Results dashboard: keep the floating Puja launcher clear of charts and recommendations. */
-body.diag-page:has(#results:not([hidden])) #pujaWidget{display:none!important}
+/* Keep Puja's photo circular and compact on this diagnostic page, matching the site-wide launcher. */
+body.diag-page #pujaWidget .puja-avatar-mini,
+body.diag-page #pujaWidget .puja-avatar{overflow:hidden}
+body.diag-page #pujaWidget .puja-avatar-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
 </style>
 </head>
 <body class="diag-page">
