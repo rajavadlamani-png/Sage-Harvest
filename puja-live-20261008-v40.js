@@ -352,7 +352,8 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     });
     const data=await response.json();
     if(!response.ok||!data.answer)throw new Error(data.error||"Puja could not answer right now. Please try again.");
-    addMessage(data.answer,"bot");addKnowledgeLinks(qctx.matches);addLink(data.answer);\n    if(speak&&data.audio)await playGeneratedAudio(data.audio,data.mimeType);
+    addMessage(data.answer,"bot");addKnowledgeLinks(qctx.matches);addLink(data.answer);
+    if(speak&&data.audio)await playGeneratedAudio(data.audio,data.mimeType);
     setState(null,"Text voice mode · ready");
   }
 
