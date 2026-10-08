@@ -117,9 +117,9 @@
   function start(){ $('intro').hidden=true;$('diagnostic').hidden=false;renderQuestion();window.scrollTo({top:0,behavior:'smooth'}); }
   function next(){
     if(state.answers[state.i]==null){$('answerHint').classList.add('visible');return;}
-    if(state.i<29){state.i++;renderQuestion();window.scrollTo({top:0,behavior:'smooth'});}else results();
+    if(state.i<29){state.i++;renderQuestion();}else results();
   }
-  function back(){if(state.i>0){state.i--;renderQuestion();window.scrollTo({top:0,behavior:'smooth'});}}
+  function back(){if(state.i>0){state.i--;renderQuestion();}}
   function radar(ds){
     var cx=180,cy=180,r=122,n=ds.length,points=function(vals,scale){return vals.map(function(v,i){var a=-Math.PI/2+i*2*Math.PI/n,rr=r*(v/scale);return (cx+Math.cos(a)*rr).toFixed(1)+','+(cy+Math.sin(a)*rr).toFixed(1);}).join(' ');};
     var out='<svg viewBox="0 0 360 360" aria-label="Supply chain maturity radar chart" role="img"><polygon points="'+points(new Array(n).fill(5),5)+'" fill="none" stroke="rgba(23,59,44,.16)"/>';
