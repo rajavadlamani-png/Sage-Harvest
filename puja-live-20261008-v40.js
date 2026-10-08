@@ -43,6 +43,7 @@
     box.textContent="PUJA DEBUG (only with ?pujadebug=1)\nTranscript: "+(t.transcript||"(none yet)")+"\nRoute: "+(t.route||"none")+"\nKnowledge matches: "+matchText+"\nKnowledge entries: "+t.knowledgeEntries+" | chars: "+t.knowledgeChars+"\nSpeech→first audio: "+(t.speechEndPerfMs!=null&&t.firstAudioPerfMs!=null?Math.round(t.firstAudioPerfMs-t.speechEndPerfMs)+" ms":"not measured yet");
   }
   const LIVE_TOKEN_URL = "https://sageharvest-puja.raja-vadlamani.workers.dev/live-token";
+  const VOICE_STREAM_URL = "https://sageharvest-puja.raja-vadlamani.workers.dev/voice-stream";
   const MODEL = "models/gemini-3.8-live";
   const VOICE = "Kore";
   const SITE_KNOWLEDGE = `You are Puja, the AI guide for Sage Harvest Agro Pvt. Limited.
@@ -336,6 +337,69 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       return false;
     }
   }
+  async function streamGeneratedVoice(text){
+    const response=await fetch(VOICE_STREAM_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text:String(text||"").slice(0,6000)})
+    });
+    if(!response.ok||!response.body){
+      let message="Puja voice streaming is temporarily unavailable.";
+      try{const data=await response.json();if(data?.error)message=data.error;}catch(_){}
+      throw new Error(message);
+    }
+    await resumeOutput();
+    const reader=response.body.getReader();
+    const decoder=new TextDecoder();
+    let buffer="";
+    let chunkCount=0;
+    const streamTurnId=pujaDebugTurn?.id||null;
+    while(true){
+      const {value,done}=await reader.read();
+      if(done)break;
+      buffer+=decoder.decode(value,{stream:true});
+      const lines=buffer.split("\n");
+      buffer=lines.pop()||"";
+      for(const line of lines){
+        const trimmed=line.trim();
+        if(!trimmed.startsWith("data:"))continue;
+        const payload=trimmed.slice(5).trim();
+        if(!payload||payload==="[DONE]")continue;
+        try{
+          const event=JSON.parse(payload);
+          const parts=event?.candidates?.[0]?.content?.parts||[];
+          for(const part of parts){
+            const inline=part?.inlineData||part?.inline_data;
+            if(inline?.data){
+              chunkCount++;
+              queuePcm(inline.data,streamTurnId);
+              if(pujaDebugTurn?.firstAudioPerfMs==null){
+                pujaDebugTurn.firstAudioPerfMs=performance.now();
+                pujaDebug("stream_audio_first_chunk",{turnId:streamTurnId,chunkCount});
+              }
+            }
+          }
+        }catch(e){
+          // SSE may contain non-JSON comments/metadata; ignore those safely.
+        }
+      }
+    }
+    if(buffer.trim().startsWith("data:")){
+      try{
+        const payload=buffer.trim().slice(5).trim();
+        if(payload&&payload!=="[DONE]"){
+          const event=JSON.parse(payload);
+          const parts=event?.candidates?.[0]?.content?.parts||[];
+          for(const part of parts){
+            const inline=part?.inlineData||part?.inline_data;
+            if(inline?.data)queuePcm(inline.data,streamTurnId);
+          }
+        }
+      }catch(_){}
+    }
+    if(!chunkCount)throw new Error("Puja voice stream returned no audio.");
+  }
+
   async function sendFallbackText(value,speak=false){
 
     const qctx=await getQuestionContext(value);
@@ -348,13 +412,18 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     const message="You are Puja, the Sage Harvest website guide. Answer the visitor using ONLY the published Sage Harvest entries below. Do not invent facts. If the entries do not clearly answer the question, say the information is not available in the published Sage Harvest website content and direct the visitor to the Contact page.\n\n"+compactKnowledge+"\n\nVisitor question: "+String(value||"").slice(0,500);
     const response=await fetch("https://sageharvest-puja.raja-vadlamani.workers.dev/",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message,voice:!!speak})
+      body:JSON.stringify({message,voice:false})
     });
     const data=await response.json();
     if(!response.ok||!data.answer)throw new Error(data.error||"Puja could not answer right now. Please try again.");
     addMessage(data.answer,"bot");addKnowledgeLinks(qctx.matches);addLink(data.answer);
-    if(speak&&data.audio)await playGeneratedAudio(data.audio,data.mimeType);
-    setState(null,"Text voice mode · ready");
+    if(speak){
+      setState("speaking","Puja is speaking · Kore");
+      await streamGeneratedVoice(data.answer);
+      setState(null,"Listening…");
+    }else{
+      setState(null,"Text voice mode · ready");
+    }
   }
 
   async function playPcm(b64,generation){
