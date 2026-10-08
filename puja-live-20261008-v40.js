@@ -332,15 +332,22 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   async function sendFallbackText(value){
     const qctx=await getQuestionContext(value);
     if(!qctx.smallTalk&&!qctx.matches.length){addMessage(noKnowledgeAnswer(),"bot");setState(null,"Text voice mode · ready");return;}
+
+    // The HTTP Worker enforces a 4,000-character request limit. Keep this
+    // fallback payload compact while preserving the relevant published entries.
+    const matchedText=formatMatchedKnowledge(qctx.matches);
+    const compactKnowledge=matchedText.slice(0,3200);
+    const message="You are Puja, the Sage Harvest website guide. Answer the visitor using ONLY the published Sage Harvest entries below. Do not invent facts. If the entries do not clearly answer the question, say the information is not available in the published Sage Harvest website content and direct the visitor to the Contact page.\n\n"+compactKnowledge+"\n\nVisitor question: "+String(value||"").slice(0,500);
     const response=await fetch("https://sageharvest-puja.raja-vadlamani.workers.dev/",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:"Answer the visitor using the following authoritative Sage Harvest website knowledge. Preserve the existing Puja persona and guardrails. For factual content, use only the current matched published-site entries supplied for this turn. If they do not clearly answer the question, say so and direct the visitor to contact.html. Do not invent vacancies, clients, outcomes, fees or commitments.\n\n"+qctx.context+"\n\nVisitor question: "+value})
+      body:JSON.stringify({message})
     });
     const data=await response.json();
     if(!response.ok||!data.answer)throw new Error(data.error||"Puja could not answer right now. Please try again.");
     addMessage(data.answer,"bot");addKnowledgeLinks(qctx.matches);addLink(data.answer);speakFallback(data.answer);
     setState(null,"Text voice mode · ready");
   }
+
   async function playPcm(b64,generation){
     if(!b64)return;
     await resumeOutput();
