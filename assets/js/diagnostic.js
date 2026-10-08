@@ -114,7 +114,7 @@
     $('backBtn').disabled=state.i===0;
     $('nextBtn').textContent=state.i===29?'View My Results →':'Next Question →';
   }
-  function start(){ $('intro').hidden=true;$('diagnostic').hidden=false;renderQuestion();window.scrollTo({top:0,behavior:'smooth'}); }
+  function start(){ $('intro').hidden=true;$('diagnostic').hidden=false;renderQuestion();$('diagnostic').scrollIntoView({behavior:'smooth',block:'start'}); }
   function next(){
     if(state.answers[state.i]==null){$('answerHint').classList.add('visible');return;}
     if(state.i<29){state.i++;renderQuestion();}else results();
@@ -156,7 +156,7 @@
     if(!derived.length)derived.push(['Balanced Profile','Your profile does not show a dominant structural gap; focus on lifting the lowest dimensions while protecting your strongest capabilities.']);
     $('derivedList').innerHTML=derived.map(function(x){return '<article><span>◆</span><div><strong>'+x[0]+'</strong><p>'+x[1]+'</p></div></article>';}).join('');
     localStorage.setItem('sageHarvestDiagnosticLast',JSON.stringify({overall:overall,level:m,scores:ds,answers:state.answers,completedAt:new Date().toISOString()}));
-    window.scrollTo({top:0,behavior:'smooth'});
+    $('results').scrollIntoView({behavior:'smooth',block:'start'});
   }
   function restart(){state.i=0;state.answers=new Array(30).fill(null);$('results').hidden=true;$('intro').hidden=false;window.scrollTo({top:0,behavior:'smooth'});}
   function printReport(){window.print();}
