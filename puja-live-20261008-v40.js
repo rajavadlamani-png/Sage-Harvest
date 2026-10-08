@@ -1109,10 +1109,9 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     // can be a male voice. Prefer known female Microsoft/Apple voices.
     const female=/(jenny|zira|aria|ava|sara|samantha|hazel|susan|sarah|sonia|libby|emily|emma|olivia|female|woman)/i;
     const male=/(guy|david|mark|daniel|george|ryan|male|man)/i;
-    return pool.find(v=>female.test(String(v.name||""))) ||
-      pool.find(v=>!male.test(String(v.name||"")) && /natural|online/i.test(String(v.name||""))) ||
-      pool.find(v=>!male.test(String(v.name||"")) && /^en(?:-|_)/i.test(String(v.lang||""))) ||
-      null;
+    // Strict female-only selection. Never fall back to an unclassified
+    // voice because Edge may expose a male voice without a male-coded name.
+    return pool.find(v=>female.test(String(v.name||""))) || null;
   }
 
   function speakInstantIntro(){
