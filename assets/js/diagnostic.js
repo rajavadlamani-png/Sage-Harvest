@@ -94,11 +94,30 @@
       return {key:d.key,name:d.name,short:d.short,weight:d.weight,score:s};
     });
   }
+  function renderDimensionTabs(){
+    var box=$('dimensionTabs');box.innerHTML='';
+    dimensions.forEach(function(d,di){
+      var b=document.createElement('button');b.type='button';b.className='diag-tab';b.setAttribute('role','tab');b.textContent=(di+1)+'. '+d.name;
+      var first=di*3,done=state.answers.slice(first,first+3).every(function(v){return v!=null;});
+      if(done)b.classList.add('complete');
+      if(Math.floor(state.i/3)===di)b.classList.add('active');
+      b.addEventListener('click',function(){state.i=di*3;renderQuestion();});box.appendChild(b);
+    });
+  }
+  function renderQuestionTabs(){
+    var box=$('questionTabs'),di=Math.floor(state.i/3),start=di*3;box.innerHTML='';
+    for(var q=0;q<3;q++){
+      var b=document.createElement('button');b.type='button';b.className='diag-question-tab';b.setAttribute('role','tab');b.textContent='Q'+(q+1);
+      if(state.i===start+q)b.classList.add('active');
+      if(state.answers[start+q]!=null)b.classList.add('complete');
+      (function(idx){b.addEventListener('click',function(){state.i=idx;renderQuestion();});})(start+q);box.appendChild(b);
+    }
+  }
   function renderQuestion(){
     var q=questions[state.i], d=dimensions.filter(function(x){return x.key===q[0];})[0];
     $('qNumber').textContent='Question '+(state.i+1)+' of 30';
-    $('progressText').textContent=Math.round(state.i/30*100)+'%';
-    $('progressFill').style.width=(state.i/30*100)+'%';
+    $('progressText').textContent=Math.round((state.i+1)/30*100)+'%';
+    $('progressFill').style.width=((state.i+1)/30*100)+'%';
     $('dimensionNo').textContent=String(dimensions.indexOf(d)+1).padStart(2,'0');
     $('dimensionName').textContent=d.name;
     $('questionText').textContent=q[1];
@@ -108,9 +127,10 @@
       var label=document.createElement('label');label.className='diag-option'+(state.answers[state.i]===n?' selected':'');
       label.innerHTML='<input type="radio" name="answer" value="'+n+'"><span class="option-number">'+n+'</span><span><strong>'+levelNames[n-1]+'</strong><small>'+q[n+1]+'</small></span>';
       label.querySelector('input').checked=state.answers[state.i]===n;
-      label.querySelector('input').addEventListener('change',(function(value,el){return function(){state.answers[state.i]=value;box.querySelectorAll('.diag-option').forEach(function(x){x.classList.remove('selected');});el.classList.add('selected');$('answerHint').classList.remove('visible');};})(n,label));
+      label.querySelector('input').addEventListener('change',(function(value,el){return function(){state.answers[state.i]=value;box.querySelectorAll('.diag-option').forEach(function(x){x.classList.remove('selected');});el.classList.add('selected');$('answerHint').classList.remove('visible');renderQuestionTabs();renderDimensionTabs();};})(n,label));
       box.appendChild(label);
     }
+    renderDimensionTabs();renderQuestionTabs();
     $('backBtn').disabled=state.i===0;
     $('nextBtn').textContent=state.i===29?'View My Results →':'Next Question →';
   }
@@ -120,6 +140,13 @@
     if(state.i<29){state.i++;renderQuestion();}else results();
   }
   function back(){if(state.i>0){state.i--;renderQuestion();}}
+  function switchResultTab(key){
+    [['overview','Overview'],['dimensions','Dimensions'],['insights','Insights'],['moves','Moves'],['engage','Engage']].forEach(function(item){var el=$('resultPanel'+item[1]);if(el)el.hidden=item[0]!==key;});
+    document.querySelectorAll('#resultTabs .diag-tab').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-tab')===key);});
+  }
+  function renderResultTabs(){
+    var box=$('resultTabs');box.innerHTML='';[['Overview','overview'],['Dimension Scores','dimensions'],['Insights & Gaps','insights'],['Three Moves','moves'],['Engage','engage']].forEach(function(item,i){var b=document.createElement('button');b.type='button';b.className='diag-tab'+(i===0?' active':'');b.textContent=item[0];b.setAttribute('data-tab',item[1]);b.addEventListener('click',function(){switchResultTab(item[1]);});box.appendChild(b);});
+  }
   function radar(ds){
     var cx=180,cy=180,r=122,n=ds.length,points=function(vals,scale){return vals.map(function(v,i){var a=-Math.PI/2+i*2*Math.PI/n,rr=r*(v/scale);return (cx+Math.cos(a)*rr).toFixed(1)+','+(cy+Math.sin(a)*rr).toFixed(1);}).join(' ');};
     var out='<svg viewBox="0 0 360 360" aria-label="Supply chain maturity radar chart" role="img"><polygon points="'+points(new Array(n).fill(5),5)+'" fill="none" stroke="rgba(23,59,44,.16)"/>';
@@ -139,7 +166,7 @@
   }
   function results(){
     var ds=dimScores(), overall=ds.reduce(function(s,d){return s+d.score*d.weight;},0), m=maturity(overall), ranked=ds.slice().sort(function(a,b){return b.score-a.score;});
-    $('diagnostic').hidden=true;$('results').hidden=false;
+    $('diagnostic').hidden=true;$('results').hidden=false;renderResultTabs();switchResultTab('overview');
     $('overallLabel').textContent=m;$('overallScore').textContent=overall.toFixed(2);$('overallCopy').textContent={Reactive:'Decisions mainly happen after problems emerge.',Structured:'Processes exist, but information and decision-making remain fragmented.',Integrated:'Functions and information are increasingly connected.',Intelligent:'Data actively supports forward-looking decisions.',Adaptive:'The supply chain continuously learns and adapts.'}[m];
     document.querySelectorAll('.maturity-track span').forEach(function(x){x.classList.toggle('active',x.textContent===m);});
     $('profileInsight').textContent=insight(ds);$('radar').innerHTML=radar(ds);
