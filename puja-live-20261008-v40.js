@@ -317,16 +317,46 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       if(outputContext.state==="suspended")outputContext.resume().catch(()=>{});
     }catch(e){console.warn("Puja audio could not be primed",e);}
   }
+  function selectPujaFemaleVoice(){
+    if(!("speechSynthesis" in window))return null;
+    const voices=window.speechSynthesis.getVoices();
+    if(!voices.length)return null;
+    const english=voices.filter(v=>/^en(?:-|_)/i.test(String(v.lang||"")));
+    const pool=english.length?english:voices;
+    const preferred=/(jenny.*(online|natural)|aria.*(online|natural)|ava.*(online|natural)|sara.*(online|natural)|zira|samantha|hazel|susan|sarah|sonia|libby|emily|emma|olivia)/i;
+    const female=pool.find(v=>preferred.test(String(v.name||"")));
+    if(female)return female;
+    const nonMale=pool.find(v=>!/(guy|david|mark|daniel|george|ryan|male|man)/i.test(String(v.name||"")));
+    return nonMale||pool.find(v=>v.default)||pool[0]||null;
+  }
   function speakFallback(text){
     if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window))return;
     try{
-      window.speechSynthesis.cancel();
+      const synth=window.speechSynthesis;
+      synth.cancel();
       const utterance=new SpeechSynthesisUtterance(text);
-      utterance.rate=1;utterance.pitch=1;utterance.volume=1;
+      const voice=selectPujaFemaleVoice();
+      if(voice)utterance.voice=voice;
+      utterance.lang=voice?.lang||"en-US";
+      utterance.rate=1;utterance.pitch=1.08;utterance.volume=1;
       utterance.onstart=()=>setState("speaking","Puja is speaking");
       utterance.onend=()=>setState(null,"Text voice mode · ready");
       utterance.onerror=()=>setState(null,"Text mode · ready");
-      window.speechSynthesis.speak(utterance);
+      synth.speak(utterance);
+      // Some Chromium/Edge builds populate voices asynchronously.
+      // Retry once if no voice was available at the first speak call.
+      if(!voice){
+        const retry=()=>{
+          synth.removeEventListener("voiceschanged",retry);
+          if(!synth.speaking&&!synth.pending)return;
+          synth.cancel();
+          const retryVoice=selectPujaFemaleVoice();
+          if(retryVoice)utterance.voice=retryVoice;
+          synth.speak(utterance);
+        };
+        synth.addEventListener("voiceschanged",retry,{once:true});
+        setTimeout(()=>synth.removeEventListener("voiceschanged",retry),1500);
+      }
     }catch(e){console.warn("Puja browser speech fallback failed",e);}
   }
   async function sendFallbackText(value){
