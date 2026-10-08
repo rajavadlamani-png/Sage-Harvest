@@ -773,16 +773,22 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
 
   function scheduleLiveResponseWatch(serial, value, qctx){
     window.clearTimeout(window.__pujaLiveResponseWatch);
-    window.__pujaLiveResponseWatch=window.setTimeout(()=>{
+    window.__pujaLiveResponseWatch=window.setTimeout(async()=>{
       if(!responsePending||responseSerial!==serial)return;
       console.warn("Puja Live response timeout",{serial,value});
       responsePending=false;
       activeVoiceTurnId=null;
       outputRow=null;
       outputText="";
-      setState(null,"Puja Live · no response");
-      addMessage("Puja Live did not return a response. Please try the question again in a moment.","bot");
-    },12000);
+      setState(null,"Puja · switching to backup response…");
+      try{
+        await sendFallbackText(value);
+      }catch(e){
+        console.warn("Puja backup response failed",e);
+        addMessage("Puja is temporarily unavailable. Please try again in a moment.","bot");
+        setState(null,"Puja · unavailable");
+      }
+    },7000);
   }
 
   async function sendTextTurn(text){
