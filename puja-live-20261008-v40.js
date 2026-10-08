@@ -830,7 +830,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     mic?.classList.add("active");
     mic?.setAttribute("aria-pressed","true");
     try{
-      await ensureSocket();await resumeOutput();
+      // Start browser recognition without waiting for Gemini Live.
       if(!voiceRecognition){
         voiceRecognition=new SpeechRecognitionClass();
         voiceRecognition.continuous=true;voiceRecognition.interimResults=true;voiceRecognition.lang="en-US";voiceRecognition.maxAlternatives=1;
