@@ -114,7 +114,7 @@
     $('backBtn').disabled=state.i===0;
     $('nextBtn').textContent=state.i===29?'View My Results →':'Next Question →';
   }
-  function start(){ $('intro').hidden=true;$('diagnostic').hidden=false;renderQuestion();window.scrollTo({top:0,behavior:'smooth'}); }
+  function start(){ $('intro').hidden=true;$('diagnostic').hidden=false;renderQuestion();$('diagnostic').scrollIntoView({behavior:'smooth',block:'start'}); }
   function next(){
     if(state.answers[state.i]==null){$('answerHint').classList.add('visible');return;}
     if(state.i<29){state.i++;renderQuestion();}else results();
