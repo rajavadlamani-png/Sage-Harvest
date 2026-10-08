@@ -792,10 +792,9 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   async function groundVoiceTurnFromTranscript(value){
     const q=String(value||"").trim();
     if(!q)return;
-    // Recognition is independent of Gemini Live. If the browser captured the
-    // question before Live is ready, establish the Live session now rather
-    // than silently dropping the transcript.
-    // Use the reliable HTTP response path while Gemini 3.8 Live is unstable.
+    // Recognition remains alive during Puja's answer so the spoken Stop
+    // command can interrupt her. While responsePending is true, onresult
+    // accepts only Stop commands and never submits new questions.
     if(!voiceRecognitionWanted)return;
     const now=performance.now();
     if(q===lastVoiceTranscript&&now-lastVoiceTranscriptPerfMs<2500){
@@ -808,9 +807,8 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     }
     lastVoiceTranscript=q;lastVoiceTranscriptPerfMs=now;
     responsePending=true;responseSerial++;
-    // Do not let SpeechRecognition hear Puja's own answer. Recognition is
-    // restarted only after the complete streamed answer has finished playing.
-    pauseRecognitionForResponse();
+    // Keep recognition alive during Puja's speech solely so spoken Stop works.
+    // onresult ignores all non-Stop speech while responsePending is true.
     const turn=pujaDebugNewTurn("voice");
     activeVoiceTurnId=turn.id;
     turn.speechEndPerfMs=turn.speechEndPerfMs??performance.now();
@@ -1032,8 +1030,17 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
           // may end a recognition segment immediately after the final/interim
           // transcript is delivered. The timer is responsible for submitting it.
           if(responsePending){
-            // Deliberately stay stopped while Puja is speaking. The response
-            // completion path restarts recognition after playback finishes.
+            // Keep recognition available for the spoken Stop command while
+            // Puja is answering. No other speech is submitted during this time.
+            if(!listening&&!voiceRecognitionStarting){
+              try{
+                voiceRecognitionStarting=true;
+                voiceRecognition.__finalTranscript="";
+                voiceRecognition.start();
+              }catch(e){
+                voiceRecognitionStarting=false;
+              }
+            }
             return;
           }
           if(transcript){
