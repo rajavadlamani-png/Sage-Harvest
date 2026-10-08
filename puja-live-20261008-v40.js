@@ -283,7 +283,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   let voiceMuted=false;
   let voiceRecognition=null, voiceRecognitionWanted=false, voiceRecognitionStarting=false;
   try{voiceMuted=sessionStorage.getItem("pujaVoiceMuted")==="true";}catch(_){}
-  let outputContext=null, playbackSources=new Set(), nextPlayTime=0, playbackQueue=Promise.resolve(), playbackGeneration=0;
+  let outputContext=null, playbackSources=new Set(), nextPlayTime=0, playbackQueue=Promise.resolve(), playbackGeneration=0, fallbackAudioSource=null;
   let responsePending=false, responseSerial=0, lastVoiceTranscript="", lastVoiceTranscriptPerfMs=0;
   let microphoneContext=null, microphoneStream=null, microphoneSource=null, microphoneProcessor=null;
   let listening=false, outputRow=null, outputText="", inputRow=null, closedByUser=false;
@@ -317,49 +317,27 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       if(outputContext.state==="suspended")outputContext.resume().catch(()=>{});
     }catch(e){console.warn("Puja audio could not be primed",e);}
   }
-  function selectPujaFemaleVoice(){
-    if(!("speechSynthesis" in window))return null;
-    const voices=window.speechSynthesis.getVoices();
-    if(!voices.length)return null;
-    const english=voices.filter(v=>/^en(?:-|_)/i.test(String(v.lang||"")));
-    const pool=english.length?english:voices;
-    const preferred=/(jenny.*(online|natural)|aria.*(online|natural)|ava.*(online|natural)|sara.*(online|natural)|zira|samantha|hazel|susan|sarah|sonia|libby|emily|emma|olivia)/i;
-    const female=pool.find(v=>preferred.test(String(v.name||"")));
-    if(female)return female;
-    const nonMale=pool.find(v=>!/(guy|david|mark|daniel|george|ryan|male|man)/i.test(String(v.name||"")));
-    return nonMale||pool.find(v=>v.default)||pool[0]||null;
-  }
-  function speakFallback(text){
-    if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window))return;
+  async function playGeneratedAudio(b64,mimeType="audio/wav"){
+    if(!b64)return false;
     try{
-      const synth=window.speechSynthesis;
-      synth.cancel();
-      const utterance=new SpeechSynthesisUtterance(text);
-      const voice=selectPujaFemaleVoice();
-      if(voice)utterance.voice=voice;
-      utterance.lang=voice?.lang||"en-US";
-      utterance.rate=1;utterance.pitch=1.08;utterance.volume=1;
-      utterance.onstart=()=>setState("speaking","Puja is speaking");
-      utterance.onend=()=>setState(null,"Text voice mode · ready");
-      utterance.onerror=()=>setState(null,"Text mode · ready");
-      synth.speak(utterance);
-      // Some Chromium/Edge builds populate voices asynchronously.
-      // Retry once if no voice was available at the first speak call.
-      if(!voice){
-        const retry=()=>{
-          synth.removeEventListener("voiceschanged",retry);
-          if(!synth.speaking&&!synth.pending)return;
-          synth.cancel();
-          const retryVoice=selectPujaFemaleVoice();
-          if(retryVoice)utterance.voice=retryVoice;
-          synth.speak(utterance);
-        };
-        synth.addEventListener("voiceschanged",retry,{once:true});
-        setTimeout(()=>synth.removeEventListener("voiceschanged",retry),1500);
-      }
-    }catch(e){console.warn("Puja browser speech fallback failed",e);}
+      await resumeOutput();
+      const bytes=b64bytes(b64);
+      const buffer=await outputContext.decodeAudioData(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));
+      if(fallbackAudioSource){try{fallbackAudioSource.stop();}catch(_){}try{fallbackAudioSource.disconnect();}catch(_){}fallbackAudioSource=null;}
+      const source=outputContext.createBufferSource();
+      source.buffer=buffer;source.connect(outputContext.destination);fallbackAudioSource=source;
+      playbackSources.add(source);
+      source.onended=()=>{playbackSources.delete(source);if(fallbackAudioSource===source)fallbackAudioSource=null;setState(null,listening?"Listening…":"Text voice mode · ready");};
+      setState("speaking","Puja is speaking");
+      source.start();
+      return true;
+    }catch(e){
+      console.warn("Puja generated audio playback failed",e);
+      return false;
+    }
   }
-  async function sendFallbackText(value){
+  async function sendFallbackText(value,speak=false){
+
     const qctx=await getQuestionContext(value);
     if(!qctx.smallTalk&&!qctx.matches.length){addMessage(noKnowledgeAnswer(),"bot");setState(null,"Text voice mode · ready");return;}
 
@@ -370,11 +348,11 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     const message="You are Puja, the Sage Harvest website guide. Answer the visitor using ONLY the published Sage Harvest entries below. Do not invent facts. If the entries do not clearly answer the question, say the information is not available in the published Sage Harvest website content and direct the visitor to the Contact page.\n\n"+compactKnowledge+"\n\nVisitor question: "+String(value||"").slice(0,500);
     const response=await fetch("https://sageharvest-puja.raja-vadlamani.workers.dev/",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message})
+      body:JSON.stringify({message,voice:!!speak})
     });
     const data=await response.json();
     if(!response.ok||!data.answer)throw new Error(data.error||"Puja could not answer right now. Please try again.");
-    addMessage(data.answer,"bot");addKnowledgeLinks(qctx.matches);addLink(data.answer);speakFallback(data.answer);
+    addMessage(data.answer,"bot");addKnowledgeLinks(qctx.matches);addLink(data.answer);\n    if(speak&&data.audio)await playGeneratedAudio(data.audio,data.mimeType);
     setState(null,"Text voice mode · ready");
   }
 
@@ -413,6 +391,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
   function stopPlayback(){
     playbackGeneration++;
     playbackQueue=Promise.resolve();
+    if(fallbackAudioSource){try{fallbackAudioSource.stop();}catch(_){}try{fallbackAudioSource.disconnect();}catch(_){}fallbackAudioSource=null;}
     for(const source of playbackSources){try{source.stop();}catch(_){}try{source.disconnect();}catch(_){}}
     playbackSources.clear();
     nextPlayTime=0;
@@ -758,7 +737,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     try{
       const qctx=await getQuestionContext(q);
       pujaDebug("voice_fallback_send",{turnId:turn.id,transcript:q,matchCount:qctx.matches.length,smallTalk:!!qctx.smallTalk});
-      await sendFallbackText(q);
+      await sendFallbackText(q,true);
       responsePending=false;
       activeVoiceTurnId=null;
       pujaDebugFinishTurn();pujaDebugTurn=null;
@@ -825,7 +804,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     }catch(e){
       console.warn("Puja Live unavailable; trying compatible text mode",e);
       setState(null,"Switching to compatible voice mode…");
-      try{await sendFallbackText(value);}
+      try{await sendFallbackText(value,false);}
       catch(fallbackError){addMessage(fallbackError.message||"Puja is temporarily unavailable. Please try again.", "bot");setState(null,"Puja · unavailable");}
     }
   }
