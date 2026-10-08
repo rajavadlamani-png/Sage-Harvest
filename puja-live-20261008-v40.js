@@ -1099,6 +1099,38 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     setState(null,listening?"Listening…":"Voice muted · ready");
   }
 
+  function selectIntroFemaleVoice(){
+    if(!("speechSynthesis" in window))return null;
+    const voices=window.speechSynthesis.getVoices();
+    if(!voices.length)return null;
+    const english=voices.filter(v=>/^en(?:-|_)/i.test(String(v.lang||"")));
+    const pool=english.length?english:voices;
+    const preferred=/(jenny.*(online|natural)|aria.*(online|natural)|ava.*(online|natural)|sara.*(online|natural)|zira|samantha|hazel|susan|sarah|sonia|libby|emily|emma|olivia)/i;
+    return pool.find(v=>preferred.test(String(v.name||"")))||
+      pool.find(v=>!/(guy|david|mark|daniel|george|ryan|male|man)/i.test(String(v.name||"")))||
+      pool.find(v=>v.default)||pool[0]||null;
+  }
+
+  function speakInstantIntro(){
+    const text="Hello, I’m Puja, your Sage Harvest assistant. How may I help you today?";
+    if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window))return;
+    try{
+      const synth=window.speechSynthesis;
+      synth.cancel();
+      const utterance=new SpeechSynthesisUtterance(text);
+      const voice=selectIntroFemaleVoice();
+      if(voice)utterance.voice=voice;
+      utterance.lang=voice?.lang||"en-US";
+      utterance.rate=0.98;
+      utterance.pitch=1.06;
+      utterance.volume=1;
+      utterance.onstart=()=>setState("speaking","Puja is speaking");
+      utterance.onend=()=>setState("listening","Listening…");
+      utterance.onerror=()=>setState("listening","Listening…");
+      synth.speak(utterance);
+    }catch(e){console.warn("Puja instant intro failed",e);}
+  }
+
   function toggleMicrophone(){primeAudio();if(voiceRecognitionWanted)stopMicrophone();else startMicrophone();}
   async function openPanel(){
     try{
@@ -1113,8 +1145,14 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       // so the browser can associate microphone permission with that gesture.
       startMicrophone();
 
-      setState(null,"Starting Puja…");
-      await ensureSocket();
+      // Speak the welcome immediately; do not wait for Gemini Live or the
+      // knowledge base. The AI connection continues in the background.
+      setState("speaking","Puja is speaking");
+      speakInstantIntro();
+
+      ensureSocket().catch(e=>{
+        console.warn("Puja background Live connection failed",e);
+      });
     }catch(e){
       console.error("Puja session start failed",e);
       addMessage("Puja is temporarily unavailable. Please try again in a moment.","bot");
