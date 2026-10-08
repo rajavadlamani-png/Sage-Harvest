@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Seed Production Carbon Potential Calculator | Sage Harvest Labs</title>
+<meta name="description" content="Explore illustrative carbon-reduction potential, MRV coverage and rice credit-equivalent scenarios across a seed-production portfolio with Sage Harvest Labs.">
+<link rel="canonical" href="https://rajavadlamani-png.github.io/Sage-Harvest/carbon-reduction-calculator.html">
+<meta property="og:title" content="Seed Production Carbon Potential Calculator | Sage Harvest Labs">
+<meta property="og:description" content="A scenario tool for exploring climate and carbon potential across seed production.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/style.css?v=20261009-carbon1">
+<style>
+:root{--ink:#173b2c;--muted:#68746b;--line:rgba(23,59,44,.13);--bg:#f7f6f0;--card:#fff;--accent:#2f7950;--accent2:#8b7542;--warn:#8b7542;--good:#2f7950;--bad:#9b4238;--shadow:0 12px 34px rgba(23,59,44,.06)}
+body{background:#f7f6f0;color:#173b2c;line-height:1.55}
+.carbon-calculator-page{background:#f7f6f0;min-height:70vh}
+.container{max-width:1180px;margin:auto;padding:38px 24px 86px}
+.hero{position:relative;overflow:hidden;background:radial-gradient(circle at 88% 8%,rgba(201,167,90,.24),transparent 27%),linear-gradient(125deg,#173b2c,#2f6045);color:#fff;border:1px solid rgba(23,59,44,.1);border-radius:24px;padding:clamp(28px,5vw,58px);box-shadow:0 18px 45px rgba(23,59,44,.12)}
+.hero h1{max-width:850px;margin:8px 0 16px;font-size:clamp(2.6rem,5.7vw,4.8rem);line-height:.99;letter-spacing:-.055em}
+.hero p{max-width:820px;margin:9px 0;color:#e4ebe4;line-height:1.7}
+.hero p[style*="font-size:12px"]{font-size:.82rem!important;opacity:.9}
+.badge{display:inline-block;border:1px solid rgba(215,189,121,.7);background:rgba(255,255,255,.06);color:#e5cf91;padding:7px 12px;border-radius:999px;font-size:.68rem;font-weight:800;letter-spacing:.14em;margin-bottom:12px}
+.version-note{display:block;margin:0 0 10px;color:#d8e2d8;font-size:.68rem;font-weight:700;letter-spacing:.13em}
+.panel,.card{background:#fff;border:1px solid rgba(23,59,44,.11);border-radius:20px;box-shadow:0 10px 30px rgba(23,59,44,.045)}
+.panel{padding:clamp(18px,3vw,30px)}
+.card{padding:20px}
+h2{color:#173b2c;letter-spacing:-.025em;font-size:clamp(1.2rem,2vw,1.45rem)}
+h3{color:#345342;letter-spacing:-.01em}
+.label{color:#8b7542;font-size:.68rem;letter-spacing:.13em;font-weight:800}
+.metric{color:#173b2c;font-size:clamp(1.5rem,2.5vw,2rem);letter-spacing:-.04em}
+.metric small{color:#68746b;font-size:.42em}
+.note,.footer{color:#68746b;line-height:1.6}
+input[type=number],input[type=text],select{border:1px solid #d8dfd6;border-radius:10px;background:#fff;color:#173b2c;padding:11px 12px}
+input[type=range]{accent-color:#2f7950}
+input[type=checkbox]{accent-color:#2f7950}
+button{border-radius:10px;background:#2f7950;color:#fff;transition:transform .15s ease,background .15s ease}
+button:hover{background:#245f3d;transform:translateY(-1px)}
+button.secondary{background:#f0f2eb;color:#173b2c;border:1px solid rgba(23,59,44,.14)}
+button.secondary:hover{background:#e5eae0}
+.scenarios button{background:#f2f4ed;color:#345342;border:1px solid rgba(23,59,44,.14)}
+.scenarios button.active{background:#173b2c;color:#fff;border-color:#173b2c}
+.range-val{background:#eef4eb;color:#2f6045}
+.callout{background:#f1f5ee;border-left:4px solid #8b7542;color:#40574a;border-radius:10px;line-height:1.6}
+.warning{background:#fff8e9;border-left:4px solid #c9a75a;color:#5f4b22;border-radius:10px;line-height:1.6}
+.status.green{background:#e9f3e8;color:#2f7950}
+.status.amber{background:#fff1d2;color:#86651e}
+.status.gray{background:#edf0e9;color:#657167}
+.bar{background:#e5e9e1}
+.bar i{background:linear-gradient(90deg,#2f7950,#8fa68e)}
+.flow span{background:#f4f5ef;border-color:rgba(23,59,44,.12);color:#345342}
+th{color:#68746b}
+td,th{border-bottom-color:#e8ece5}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid rgba(143,166,142,.75);outline-offset:2px}
+#allocationWarning{margin-top:12px}
+#pujaWidget .puja-avatar-mini,#pujaWidget .puja-avatar{overflow:hidden}
+#pujaWidget .puja-avatar-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+@media(max-width:700px){.container{padding:22px 14px 60px}.hero{border-radius:18px}.hero h1{font-size:clamp(2.35rem,11vw,3.6rem)}.panel{padding:18px;border-radius:16px}}
+@media print{.site-header,.launch-notice,body>footer,#pujaWidget{display:none!important}.container{padding:0}.hero{background:#fff;color:#173b2c;border:1px solid #ddd;box-shadow:none}.hero p{color:#40574a}.badge{color:#8b7542;border-color:#8b7542}.version-note{color:#68746b}.panel,.card{box-shadow:none;break-inside:avoid}}
+</style>
+</head>
+<body>
+<header class="site-header"><a class="brand" href="index.html" aria-label="Sage Harvest Agro home"><img class="brand-logo" src="assets/img/sage-harvest-logo-live-20261007.svg?v=20261007-site-audit1" alt="Sage Harvest Agro Pvt. Limited"></a><button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="site-navigation">☰</button><nav class="nav" id="site-navigation"><a class="active" href="index.html">Home</a><a href="about.html">About</a><a href="services.html">Services</a><a href="international-expansion.html#global-network">Global Network</a><a href="case-studies.html">Perspectives</a><a href="insights.html">Insights</a><a href="founder.html">Founder</a><a href="labs.html">Tools &amp; Intelligence</a><a href="careers.html">Careers &amp; Collaboration</a><a class="nav-cta" href="contact.html">Talk to us</a></nav></header>
+<aside class="launch-notice" role="note" aria-label="Sage Harvest announcement"><div class="launch-notice-viewport"><div class="launch-notice-track"><span class="launch-notice-item"><strong>Consulting engagements commence 1 April 2027.</strong> Until then, this website is for information and prospective enquiries only. Engagements will begin from that date.</span><span class="launch-notice-separator" aria-hidden="true">•</span><span class="launch-notice-item" aria-hidden="true"><strong>Consulting engagements commence 1 April 2027.</strong> Until then, this website is for information and prospective enquiries only. Engagements will begin from that date.</span><span class="launch-notice-separator" aria-hidden="true">•</span></div></div></aside>
+<main class="carbon-calculator-page">
+<div class="container">
+
+<section class="hero">
+  <div class="badge">SAGE HARVEST LABS · CLIMATE INTELLIGENCE</div><div class="version-note">SCENARIO MODEL · v1.8.1</div>
+  <h1>Seed Production Climate & Carbon Potential Calculator</h1>
+  <p>Explore the potential annual CO₂e reduction from best-practice adoption across your seed-production portfolio — using your own acreage and crop mix.</p>
+  <p style="font-size:12px;opacity:.9">This public teaser is a scenario calculator, not a carbon-credit certification, verification or issuance tool.</p>
+</section>
+
+<section class="panel" style="margin-top:18px">
+  <h2>1. Build your company portfolio</h2>
+  <p class="note">Select the total seed-production area relevant to your company, then allocate that area across the crop mix. The calculator keeps the portfolio balanced automatically.</p>
+
+  <div class="card" style="box-shadow:none;background:#f7fafb;margin-bottom:14px">
+    <div class="label">Total seed-production portfolio</div>
+    <div class="metric" id="portfolioDisplay">25,000 <small>acres</small></div>
+    <input id="portfolioArea" type="range" min="1000" max="50000" step="100" value="25000" aria-label="Total portfolio acres">
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)">
+      <span>1,000 acres</span><span>50,000 acres</span>
+    </div>
+    <div class="grid g2" style="gap:10px;margin-top:10px">
+      <div>
+        <label class="label" for="portfolioExact">Or enter exact acreage</label>
+        <input id="portfolioExact" type="number" min="1000" max="50000" step="1" value="25000">
+      </div>
+      <div>
+        <div class="label">Remaining to allocate</div>
+        <div class="metric" style="font-size:22px" id="remainingArea">0 <small>acres</small></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid g3">
+    <div>
+      <label class="label" for="companyName">Company name (optional)</label>
+      <input id="companyName" type="text" placeholder="Enter company name">
+    </div>
+    <div>
+      <label class="label" for="projectName">Project / assessment name (optional)</label>
+      <input id="projectName" type="text" placeholder="e.g., Seed Climate Assessment">
+    </div>
+    <div>
+      <label class="label" for="assessmentYear">Assessment year</label>
+      <input id="assessmentYear" type="number" min="2020" max="2100" value="2026">
+    </div>
+  </div>
+
+  <h3>Allocate your crop mix</h3>
+  <div class="tscroll">
+  <table id="cropTable">
+    <thead><tr><th>Crop</th><th>Selected acres</th><th>Share of portfolio</th><th>Allocation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>Rice</b></td>
+        <td><input id="riceArea" type="number" min="0" step="100" value="10000" aria-label="Rice acres"></td>
+        <td id="riceShare">40.0%</td>
+        <td><input id="riceAlloc" type="range" min="0" max="25000" step="100" value="10000" aria-label="Rice allocation"></td>
+      </tr>
+      <tr>
+        <td><b>Corn / Maize</b></td>
+        <td><input id="cornArea" type="number" min="0" step="100" value="6000" aria-label="Corn acres"></td>
+        <td id="cornShare">24.0%</td>
+        <td><input id="cornAlloc" type="range" min="0" max="25000" step="100" value="6000" aria-label="Corn allocation"></td>
+      </tr>
+      <tr>
+        <td><b>Cotton</b></td>
+        <td><input id="cottonArea" type="number" min="0" step="100" value="5000" aria-label="Cotton acres"></td>
+        <td id="cottonShare">20.0%</td>
+        <td><input id="cottonAlloc" type="range" min="0" max="25000" step="100" value="5000" aria-label="Cotton allocation"></td>
+      </tr>
+      <tr>
+        <td><b>Other crops</b></td>
+        <td><input id="otherArea" type="number" min="0" step="100" value="4000" aria-label="Other crops acres"></td>
+        <td id="otherShare">16.0%</td>
+        <td><input id="otherAlloc" type="range" min="0" max="25000" step="100" value="4000" aria-label="Other crops allocation"></td>
+      </tr>
+      <tr>
+        <td><b>Total allocated</b></td>
+        <td id="totalAllocated"><b>30,000 acres</b></td>
+        <td id="totalShare"><b>100.0%</b></td>
+        <td><span id="allocationStatus" class="status green">Balanced</span></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div id="allocationWarning" class="warning" style="display:none;margin-top:10px"></div>
+
+  <div class="callout" style="margin-top:12px">
+    <b>Portfolio rule:</b> the four crop areas must add up to the selected company portfolio. A company can use any mix within the selected 1,000–50,000 acre range.
+  </div>
+</section>
+
+<section class="panel" style="margin-top:18px">
+  <h2>2. Baseline, practice adoption & MRV</h2>
+  <p class="note">Only the <b>incremental practice adoption above the baseline</b> is treated as new potential. This is a screening model; project baselines must ultimately follow the applicable methodology.</p>
+
+  <div class="scenarios" id="scenarioButtons">
+    <button data-scenario="conservative">Conservative</button>
+    <button data-scenario="accelerated">Accelerated</button>
+    <button data-scenario="full" class="active">Best-practice pathway</button>
+    <button data-scenario="custom">Custom</button>
+  </div>
+
+  <div class="tscroll">
+  <table class="wide" style="margin-top:12px">
+    <thead><tr><th>Crop</th><th>Baseline adoption</th><th>Target adoption</th><th>MRV coverage</th><th>Eligible / suitable area</th></tr></thead>
+    <tbody id="practiceBody"></tbody>
+  </table>
+  </div>
+
+  <div class="warning" style="margin-top:10px"><b>Seed-production feasibility:</b> Eligible/suitable area is a screening input. It represents the share of acreage assumed suitable for the selected intervention. It is not an agronomic certification. Each selected season/crop cycle should represent a cycle in which the same eligible area and intervention are actually applicable.</div>
+
+  <h3>Seasonality, jurisdiction & deductions</h3>
+  <div class="grid g3">
+    <div><label class="label" for="seasons">Seasons / crop cycles per year</label>
+      <input id="seasons" type="number" min="1" max="3" step="1" value="1">
+      <div class="note">Use 1 unless more than one relevant cycle is demonstrably applicable.</div></div>
+    <div><label class="label" for="jurisdiction">Project jurisdiction</label>
+      <select id="jurisdiction"><option value="india">India</option><option value="other">Outside India</option><option value="mixed">Mixed / multiple</option></select>
+      <div class="note">The CCTS rice pathway shown here is India-specific.</div></div>
+    <div><label class="label" for="deduction">Documented project-specific deduction (%)</label>
+      <input id="deduction" type="number" min="0" max="50" step="1" value="0">
+      <div class="note">Applies to all MRV/net results. Use only where supported by a methodology/project parameter.</div></div>
+    <div><label class="label" for="otherFactor">Other-crop factor (tCO₂e/ha/season)</label>
+      <input id="otherFactor" type="number" min="0" max="10" step="0.1" value="0">
+      <div class="note">User-defined. Default 0 (no reduction assumed for other crops).</div></div>
+  </div>
+
+  <div class="callout" style="margin-top:12px"><b>Calculation:</b> eligible area × (target adoption − baseline adoption) × seasons × reduction factor. MRV coverage and any documented deduction are then applied. The rice credit-equivalent view uses the resulting MRV/net range and is gated by methodology context, jurisdiction and the explicit eligibility/additionality assumption. No generic uncertainty, leakage or buffer haircut is applied by this teaser; any such treatment should come from the applicable methodology or documented project parameters.</div>
+  <div class="note" style="margin-top:8px">Illustrative screening factors in tCO₂e/ha/season: Rice 1.5–2.5, Corn/Maize 0.5–1.0, Cotton 0.5–1.0; Other crops user-defined. These are not official methodology factors.</div>
+</section>
+
+<div class="grid cards">
+  <div class="card"><div class="label">Total portfolio</div><div class="metric" id="totalAcres">0 <small>acres</small></div></div>
+  <div class="card"><div class="label">Modeled reduction (low–high)</div><div class="metric" id="reduction">0 <small>tCO₂e/yr</small></div></div>
+  <div class="card"><div class="label">MRV-covered, net (low–high)</div><div class="metric" id="mrvReduction">0 <small>tCO₂e/yr</small></div></div>
+  <div class="card"><div class="label">Illustrative credit-equivalent potential (rice)</div><div class="metric" id="creditPotential">— <small>tCO₂e/yr</small></div></div>
+</div>
+
+<div class="grid main">
+<section class="panel">
+  <h2>3. Carbon potential</h2>
+  <div id="portfolioStatus" class="callout" style="margin-bottom:12px"><b>Portfolio status:</b> Checking allocation…</div>
+  <div id="summaryText" class="note"></div>
+
+  <h3>Reduction range by crop</h3>
+  <div id="bars"></div>
+
+  <h3>Credit-development gate</h3>
+  <div class="callout">
+    <b>Rice:</b> BEE currently lists BM AG04.002, “Emission reduction through improved management practices in rice cultivation,” under the CCTS Offset Mechanism. This calculator therefore shows a methodology-linked <i>potential</i> for rice only. It does not assume issuance.
+  </div>
+  <div class="warning" style="margin-top:10px">
+    <b>Corn, cotton and other crops:</b> they remain modeled for emissions-reduction potential, but this calculator does not treat them as CCTS-creditable by default. A future methodology or another appropriate crediting standard would need to be established and applied.
+  </div>
+
+  <h3>Additionality / eligibility assumption</h3>
+  <label style="display:flex;gap:9px;align-items:flex-start;font-size:13px">
+    <input id="additionality" type="checkbox" style="margin-top:3px">
+    <span>I want to view an <b>illustrative rice credit-equivalent potential</b> assuming project eligibility and additionality are demonstrated. I understand this is not an estimate of credits issued or issuable.</span>
+  </label>
+
+  <div class="grid g2" style="margin-top:15px">
+    <div class="card" style="box-shadow:none">
+      <div class="label">Low-case modeled reduction</div>
+      <div class="metric" id="lowReduction">0</div>
+      <div class="note">tCO₂e/year</div>
+    </div>
+    <div class="card" style="box-shadow:none">
+      <div class="label">High-case modeled reduction</div>
+      <div class="metric" id="highReduction">0</div>
+      <div class="note">tCO₂e/year</div>
+    </div>
+  </div>
+
+  <div id="creditBox" class="card" style="margin-top:12px;background:#f7fafb;box-shadow:none">
+    <div class="label">Illustrative credit-equivalent potential</div>
+    <div class="metric" id="creditBoxValue">—</div>
+    <div class="note" id="creditBoxNote">Enable the assumption above to display an illustrative rice credit-equivalent range.</div>
+    <div class="note" style="margin-top:5px"><b>Not an estimate of credits issued or issuable.</b></div>
+  </div>
+</section>
+</div>
+
+<section class="panel" style="margin-top:18px">
+  <h2>4. Crop-by-crop calculation logic</h2>
+  <div class="note">* MRV/net high is a modeled value after selected MRV coverage and any documented project-specific deduction. It is not a verified credit volume.</div>
+  <div class="tscroll">
+  <table class="wide">
+    <thead><tr><th>Crop</th><th>Area ha</th><th>Eligible ha</th><th>Incremental practice ha</th><th>Low reduction</th><th>High reduction</th><th>MRV/net high*</th></tr></thead>
+    <tbody id="calcTable"></tbody>
+  </table>
+  </div>
+
+  <h3>MRV pathway</h3>
+  <div class="flow">
+    <span>Field / GPS boundary</span><b>→</b>
+    <span>Practice evidence</span><b>→</b>
+    <span>Inputs + water + energy</span><b>→</b>
+    <span>Activity data</span><b>→</b>
+    <span>Emission calculation</span><b>→</b>
+    <span>MRV</span><b>→</b>
+    <span>Validation / verification</span><b>→</b>
+    <span>Potential issuance</span>
+  </div>
+  <p class="note" style="margin-top:12px">
+    The strongest future version should connect the calculator to actual field IDs, GPS polygons, grower records, crop operations, input records, irrigation/water data, energy/fuel use, harvest/processing data and audit evidence rather than relying on generic assumptions.
+  </p>
+</section>
+
+<div class="actions">
+  <button onclick="window.print()">Print / Save PDF</button>
+  <button class="secondary" onclick="resetDefaults()">Reset scenario</button>
+</div>
+
+<section class="panel" style="margin-top:18px">
+  <h2>Developer & Disclosures</h2>
+  <p><b>Developed by Raja Vadlamani</b></p>
+  <p class="note">
+    This is an independent public scenario tool developed by Raja Vadlamani to help companies explore the potential climate and carbon implications of improved practices across seed-production landscapes.
+  </p>
+  <p class="note">
+    <b>Purpose:</b> education, screening and scenario exploration. It is not intended to establish a company's official GHG inventory, carbon footprint, regulatory compliance position or carbon-credit entitlement.
+  </p>
+  <div class="warning">
+    <b>Full disclosure:</b>
+    This calculator is an analytical and educational scenario tool. It is not a carbon-credit registry, certification system, validation/verification service, legal opinion, accounting opinion, investment recommendation, tax advice, or assurance statement. Results are estimates generated from user inputs and illustrative assumptions. They must not be represented as verified emission reductions, issued Carbon Credit Certificates (CCCs), offsets, removals, Scope 1/2/3 inventory results, or guaranteed financial value.
+  </div>
+  <div class="warning" style="margin-top:10px">
+    <b>Methodology disclosure:</b>
+    The calculator does not substitute for an approved methodology, project design document, baseline study, monitoring plan, additionality assessment, uncertainty assessment, leakage assessment, permanence assessment where applicable, validation, verification or registry decision.
+    The Bureau of Energy Efficiency (BEE) currently lists <b>BM AG04.002 — Emission reduction through improved management practices in rice cultivation</b> under the CCTS Offset Mechanism.
+    <br><span class="note">Reference: BEE, “Methodologies and Tools under Offset Mechanism”, last updated 7 July 2026.</span>
+  </div>
+  <div class="warning" style="margin-top:10px">
+    <b>Credit disclosure:</b>
+    A modeled tCO₂e reduction is not automatically a carbon credit. Under the CCTS Offset Mechanism, project registration and issuance are subject to applicable eligibility, methodology, monitoring and validation/verification requirements. This tool does not predict or guarantee issuance.
+    <br><span class="note">Reference: BEE CCTS Offset Mechanism materials and approved methodologies.</span>
+  </div>
+  <div class="warning" style="margin-top:10px">
+    <b>Baseline & factor disclosure:</b> The baseline practice share and eligible-area share are screening inputs; actual baseline, additionality, leakage, uncertainty and buffer treatment must follow the applicable methodology. This teaser applies no generic credit haircut.
+    The crop-level reduction factors in this tool are illustrative screening placeholders for scenario analysis. They are not claimed to be official BEE/CCTS factors. For an actual project, replace them with methodology-specific equations, parameters, activity data and project/baseline calculations supported by appropriate evidence.
+  </div>
+  <div class="warning" style="margin-top:10px">
+    <b>Ownership & claim-rights disclosure:</b>
+    In contract-grower seed production, the right to claim, transfer or sell reductions depends on contractual arrangements, the applicable accounting/crediting framework and programme rules. A reduction should not be counted twice across incompatible claims. This tool does not assess ownership, claim-rights or double-counting for any specific project.
+  </div>
+  <div class="warning" style="margin-top:10px">
+    <b>GHG accounting disclosure:</b>
+    This calculator is not a GHG Protocol inventory calculator. The GHG Protocol Land Sector and Removals Standard provides requirements and guidance for accounting and reporting land-sector emissions and removals; its effective date is 1 January 2027. Any corporate reporting claim should be assessed against the applicable GHG Protocol requirements and the company's defined inventory boundary.
+    <br><span class="note">Reference: GHG Protocol, Land Sector and Removals Standard v1.1 and Guidance, 2026.</span>
+  </div>
+  <div class="warning" style="margin-top:10px">
+    <b>Scope disclosure:</b>
+    This calculator does not determine whether a company's reductions can be counted toward a corporate GHG inventory, Scope 3 category, product carbon footprint, insetting claim or any other corporate climate claim. Such treatment depends on the relevant accounting framework, boundary, ownership/control rules and claim requirements.
+  </div>
+  <div class="warning" style="margin-top:10px">
+    <b>No guarantee:</b>
+    Actual carbon-reduction outcomes, credit volumes, eligibility, verification results, issuance, marketability or economic value may differ materially from this scenario output.
+  </div>
+
+  <div class="callout" style="margin-top:10px">
+    <b>Public reference sources:</b> <a href="https://beeindia.gov.in/view_content.php?lang=1&lid=571" target="_blank" rel="noopener">Bureau of Energy Efficiency (BEE) — Methodologies and Tools under Offset Mechanism</a>; <a href="https://ghgprotocol.org/land-sector-and-removals-standard" target="_blank" rel="noopener">GHG Protocol — Land Sector and Removals Standard</a>; <a href="https://ghgprotocol.org/land-sector-and-removals-guidance" target="_blank" rel="noopener">GHG Protocol — Land Sector and Removals Guidance</a>. Users should consult the latest official publications before relying on any result for a real project.
+  </div>
+  <div class="callout" style="margin-top:10px"><b>Data privacy:</b> No data is uploaded or stored by this calculator. Inputs and calculations remain in your browser while you use this standalone page.</div>
+  <p class="note" style="margin-top:12px">
+    The CCTS framework and approved methodologies can change. Users should check the latest BEE/Indian Carbon Market documents and obtain appropriate technical, legal, accounting and carbon-market advice before relying on the results for a real project.
+  </p>
+</section>
+
+<div class="footer">
+  Seed Production Carbon Potential Calculator v1.8.1 • Area conversion: 1 acre = 0.404685642 ha • Results are annualized model outputs. Carbon-credit issuance is subject to the applicable programme, methodology, project eligibility, baseline, additionality, monitoring, validation/verification and registry decisions.
+</div>
+</div>
+
+<script>
+/* ---------- Configuration (edit factors here) ---------- */
+const ACRE_TO_HA = 0.404685642;
+const KEYS = ['rice','corn','cotton','other'];
+const SUFFIXES = ['Base','Adopt','Mrv','Eligible'];
+
+// Illustrative screening factors, tCO2e per hectare per season. NOT official methodology factors.
+const crops = [
+  {key:'rice',  name:'Rice',         creditable:true,  low:1.5, high:2.5, badge:'CCTS methodology listed', badgeClass:'green'},
+  {key:'corn',  name:'Corn / Maize', creditable:false, low:0.5, high:1.0, badge:'Scenario only',           badgeClass:'amber'},
+  {key:'cotton',name:'Cotton',       creditable:false, low:0.5, high:1.0, badge:'Scenario only',           badgeClass:'amber'},
+  {key:'other', name:'Other crops',  creditable:false, low:null,high:null,badge:'Scenario only',           badgeClass:'gray'}
+];
+
+// Per-crop preset values (percent). "full" is also the initial and reset state.
+const PRESETS = {
+  conservative:{
+    rice:{base:20,adopt:45,mrv:50,eligible:80},
+    corn:{base:15,adopt:35,mrv:45,eligible:90},
+    cotton:{base:15,adopt:35,mrv:45,eligible:90},
+    other:{base:10,adopt:30,mrv:40,eligible:90}
+  },
+  accelerated:{
+    rice:{base:20,adopt:65,mrv:75,eligible:80},
+    corn:{base:15,adopt:55,mrv:70,eligible:90},
+    cotton:{base:15,adopt:55,mrv:70,eligible:90},
+    other:{base:10,adopt:50,mrv:65,eligible:90}
+  },
+  full:{
+    rice:{base:20,adopt:85,mrv:90,eligible:80},
+    corn:{base:15,adopt:75,mrv:85,eligible:90},
+    cotton:{base:15,adopt:75,mrv:85,eligible:90},
+    other:{base:10,adopt:70,mrv:80,eligible:90}
+  }
+};
+
+/* ---------- Helpers ---------- */
+const el = id => document.getElementById(id);
+const n = id => Math.max(0, Number(el(id).value) || 0);
+const pct = id => Number(el(id).value) || 0;
+const fmt = x => Math.round(x).toLocaleString('en-IN');
+const fmt1 = x => x.toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1});
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// Single source of truth for the portfolio total is the exact-acreage box.
+function portfolio(){
+  const v = Math.round(Number(el('portfolioExact').value) || 25000);
+  return Math.min(50000, Math.max(1000, v));
+}
+
+/* ---------- Build the practice table ---------- */
+function buildPracticeTable(){
+  el('practiceBody').innerHTML = crops.map(c=>{
+    const p = PRESETS.full[c.key];
+    const cell = (suffix,val)=>
+      '<td><div class="range-row"><input class="pin" id="'+c.key+suffix+'" type="range" min="0" max="100" value="'+val+'" aria-label="'+c.name+' '+suffix.toLowerCase()+'">'+
+      '<div class="range-val" id="'+c.key+suffix+'Val">'+val+'%</div></div></td>';
+    return '<tr><td><b>'+c.name+'</b><br><span class="status '+c.badgeClass+'">'+c.badge+'</span></td>'+
+      cell('Base',p.base)+cell('Adopt',p.adopt)+cell('Mrv',p.mrv)+cell('Eligible',p.eligible)+'</tr>';
+  }).join('');
+}
+
+function updateRangeLabels(){
+  crops.forEach(c=>SUFFIXES.forEach(s=>{
+    el(c.key+s+'Val').textContent = pct(c.key+s)+'%';
+  }));
+}
+
+function getFactors(c){
+  if(c.key==='other'){ const f = n('otherFactor'); return {low:f, high:f}; }
+  return {low:c.low, high:c.high};
+}
+
+/* ---------- Portfolio / allocation controls ---------- */
+function syncPortfolioControls(){
+  const total = portfolio();
+  el('portfolioDisplay').innerHTML = fmt(total)+' <small>acres</small>';
+  el('portfolioArea').value = total;
+  KEYS.forEach(k=>{ el(k+'Alloc').max = total; });
+}
+
+function setPortfolioTotal(newTotal){
+  newTotal = Math.min(50000, Math.max(1000, Math.round(newTotal)));
+  el('portfolioExact').value = newTotal;
+  syncPortfolioControls();
+  const oldTotal = KEYS.reduce((s,k)=>s+n(k+'Area'),0);
+  if(oldTotal>0){
+    let assigned = 0;
+    KEYS.forEach((k,i)=>{
+      let v;
+      if(i<KEYS.length-1){
+        v = Math.round((n(k+'Area')/oldTotal*newTotal)/100)*100;
+        v = Math.min(v, newTotal-assigned);
+        assigned += v;
+      } else {
+        v = Math.max(0, newTotal-assigned);
+      }
+      el(k+'Area').value = v;
+      el(k+'Alloc').value = v;
+    });
+  } else {
+    KEYS.forEach(k=>{ el(k+'Area').value = 0; el(k+'Alloc').value = 0; });
+    el('riceArea').value = newTotal; el('riceAlloc').value = newTotal;
+  }
+  calculate();
+}
+
+function syncAreaFromSlider(key){
+  el(key+'Area').value = Number(el(key+'Alloc').value) || 0;
+}
+function syncSliderFromArea(key){
+  let val = Math.max(0, Number(el(key+'Area').value) || 0);
+  val = Math.min(portfolio(), val);
+  el(key+'Area').value = val;
+  el(key+'Alloc').value = val;
+}
+
+// If a crop edit pushes the sum above the portfolio, trim the other crops (last first).
+function rebalanceIfNeeded(changedKey){
+  const total = portfolio();
+  const vals = {};
+  KEYS.forEach(k=>{ vals[k] = Math.max(0, Math.round(Number(el(k+'Area').value) || 0)); });
+  let excess = KEYS.reduce((a,k)=>a+vals[k],0) - total;
+  if(excess<=0) return;
+  const others = KEYS.filter(k=>k!==changedKey);
+  for(let i=others.length-1; i>=0 && excess>0; i--){
+    const k = others[i], cut = Math.min(vals[k], excess);
+    vals[k] -= cut; excess -= cut;
+  }
+  if(excess>0) vals[changedKey] = Math.max(0, vals[changedKey]-excess);
+  KEYS.forEach(k=>{ el(k+'Area').value = vals[k]; el(k+'Alloc').value = vals[k]; });
+}
+
+/* ---------- Main calculation ---------- */
+function calculate(){
+  syncPortfolioControls();
+  updateRangeLabels();
+
+  const total = portfolio();
+  const allocated = KEYS.reduce((s,k)=>s+n(k+'Area'),0);
+  const remaining = total-allocated;
+  el('remainingArea').innerHTML = fmt(Math.max(0,remaining))+' <small>acres</small>';
+  KEYS.forEach(k=>{ el(k+'Share').textContent = (n(k+'Area')/total*100).toFixed(1)+'%'; });
+  el('totalAllocated').innerHTML = '<b>'+fmt(allocated)+' acres</b>';
+  el('totalShare').innerHTML = '<b>'+(allocated/total*100).toFixed(1)+'%</b>';
+
+  const balanced = Math.abs(allocated-total)<0.5;
+  const status = el('allocationStatus');
+  status.textContent = balanced ? 'Balanced' : (allocated<total ? 'Unallocated' : 'Over-allocated');
+  status.className = 'status '+(balanced?'green':'amber');
+
+  const aw = el('allocationWarning');
+  if(!balanced){
+    aw.style.display = 'block';
+    aw.innerHTML = allocated<total
+      ? '<b>'+fmt(total-allocated)+' acres remain unallocated.</b> Allocate the balance before interpreting results.'
+      : '<b>'+fmt(allocated-total)+' acres exceed the portfolio.</b> The calculator will rebalance when a crop is edited.';
+  } else aw.style.display = 'none';
+
+  el('portfolioStatus').innerHTML = balanced
+    ? '<b>Portfolio status:</b> Balanced — '+fmt(allocated)+' of '+fmt(total)+' acres allocated.'
+    : '<b>Portfolio status:</b> Not balanced — results are shown for reference only.';
+
+  const seasons = Math.min(3, Math.max(1, Math.round(n('seasons')) || 1));
+  const deduction = Math.min(50, n('deduction'))/100;
+  const jurisdiction = el('jurisdiction').value;
+
+  let low=0, high=0, netLow=0, netHigh=0, riceCreditLow=0, riceCreditHigh=0;
+  const rows = [];
+
+  crops.forEach(c=>{
+    const acres = n(c.key+'Area'), ha = acres*ACRE_TO_HA;
+    const base = pct(c.key+'Base')/100, target = pct(c.key+'Adopt')/100;
+    const incremental = Math.max(0, target-base);
+    const mrv = pct(c.key+'Mrv')/100, eligibleShare = pct(c.key+'Eligible')/100;
+    const f = getFactors(c);
+    const eligibleHa = ha*eligibleShare, incrementalHa = eligibleHa*incremental;
+    const lowR = incrementalHa*f.low*seasons, highR = incrementalHa*f.high*seasons;
+    const netL = lowR*mrv*(1-deduction), netH = highR*mrv*(1-deduction);
+    low += lowR; high += highR; netLow += netL; netHigh += netH;
+    if(c.creditable && jurisdiction==='india'){
+      riceCreditLow  = netL;
+      riceCreditHigh = netH;
+    }
+    rows.push({c, ha, eligibleHa, incrementalHa, lowR, highR, netH});
+  });
+
+  el('totalAcres').innerHTML = balanced ? fmt(allocated)+' <small>allocated acres</small>' : '— <small>balance portfolio</small>';
+  el('reduction').innerHTML = balanced ? fmt(low)+'–'+fmt(high)+' <small>tCO₂e/yr</small>' : '— <small>balance portfolio</small>';
+  el('mrvReduction').innerHTML = balanced ? fmt(netLow)+'–'+fmt(netHigh)+' <small>tCO₂e/yr</small>' : '— <small>balance portfolio</small>';
+  el('lowReduction').textContent = balanced ? fmt(low) : '—';
+  el('highReduction').textContent = balanced ? fmt(high) : '—';
+
+  const add = el('additionality').checked;
+  const creditAllowed = add && balanced && jurisdiction==='india';
+  el('creditPotential').innerHTML = creditAllowed
+    ? fmt(riceCreditLow)+'–'+fmt(riceCreditHigh)+' <small>tCO₂e/yr</small>'
+    : '— <small>tCO₂e/yr</small>';
+  el('creditBoxValue').textContent = creditAllowed ? fmt(riceCreditLow)+' – '+fmt(riceCreditHigh)+' tCO₂e/yr' : '—';
+  el('creditBoxNote').textContent = creditAllowed
+    ? 'Illustrative rice credit-equivalent range after MRV coverage and the documented project-specific deduction, assuming eligibility and additionality. Actual issuance can differ.'
+    : (add && jurisdiction!=='india'
+        ? 'The rice CCTS pathway in this teaser is restricted to India.'
+        : (add && !balanced
+            ? 'Balance the portfolio to display the illustrative rice credit-equivalent range.'
+            : 'Enable the assumption above (and balance the portfolio) to display the illustrative rice credit-equivalent range.'));
+
+  const company = el('companyName').value.trim();
+  const prefix = company ? '<b>'+esc(company)+'</b>: ' : '';
+  el('summaryText').innerHTML = balanced
+    ? prefix+'The selected portfolio is <b>'+fmt(total)+' acres</b>. The model applies a baseline-adjusted practice gap across <b>'+seasons+' season(s)</b>. The illustrative modeled reduction range is <b>'+fmt(low)+'–'+fmt(high)+' tCO₂e/year</b>.'
+    : prefix+'Complete the portfolio allocation before interpreting carbon results. The four crop areas must equal the selected portfolio total of <b>'+fmt(total)+' acres</b>.';
+
+  const bars = el('bars'); bars.innerHTML = '';
+  if(!balanced){
+    bars.innerHTML = '<div class="warning">Complete the portfolio allocation to display crop-level carbon results.</div>';
+  } else {
+    const max = Math.max(...rows.map(r=>r.highR), 1);
+    rows.forEach(r=>{
+      const w = document.createElement('div');
+      w.style.margin = '9px 0';
+      w.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><b>'+r.c.name+'</b><span>'+fmt(r.lowR)+'–'+fmt(r.highR)+' tCO₂e</span></div><div class="bar"><i style="width:'+Math.min(100, r.highR/max*100)+'%"></i></div>';
+      bars.appendChild(w);
+    });
+  }
+
+  const tb = el('calcTable'); tb.innerHTML = '';
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    const values = balanced
+      ? [fmt1(r.ha),fmt1(r.eligibleHa),fmt1(r.incrementalHa),fmt1(r.lowR),fmt1(r.highR),fmt1(r.netH)]
+      : ['—','—','—','—','—','—'];
+    tr.innerHTML = '<td><b>'+r.c.name+'</b></td><td>'+values[0]+'</td><td>'+values[1]+'</td><td>'+values[2]+'</td><td>'+values[3]+'</td><td>'+values[4]+'</td><td>'+values[5]+'</td>';
+    tb.appendChild(tr);
+  });
+}
+
+/* ---------- Presets ---------- */
+function setActiveScenario(name){
+  document.querySelectorAll('#scenarioButtons button').forEach(b=>b.classList.toggle('active', b.dataset.scenario===name));
+}
+function applyPreset(name){
+  if(name==='custom'){ setActiveScenario('custom'); return; }
+  const p = PRESETS[name];
+  crops.forEach(c=>{
+    el(c.key+'Base').value = p[c.key].base;
+    el(c.key+'Adopt').value = p[c.key].adopt;
+    el(c.key+'Mrv').value = p[c.key].mrv;
+    el(c.key+'Eligible').value = p[c.key].eligible;
+  });
+  setActiveScenario(name);
+  calculate();
+}
+
+/* ---------- Events ---------- */
+buildPracticeTable();
+
+document.querySelectorAll('#scenarioButtons button').forEach(b=>{
+  b.addEventListener('click', ()=>applyPreset(b.dataset.scenario));
+});
+
+document.querySelectorAll('input').forEach(elm=>elm.addEventListener('input', ()=>{
+  const id = elm.id;
+  if(id==='portfolioArea'){ setPortfolioTotal(Number(elm.value)); return; }
+  if(id==='portfolioExact') return;               // applied on "change" so typing isn't interrupted
+  for(const k of KEYS){
+    if(id===k+'Alloc'){ syncAreaFromSlider(k); rebalanceIfNeeded(k); break; }
+    if(id===k+'Area'){ syncSliderFromArea(k); rebalanceIfNeeded(k); break; }
+  }
+  if(elm.classList.contains('pin')) setActiveScenario('custom');
+  calculate();
+}));
+el('portfolioExact').addEventListener('change', ()=>setPortfolioTotal(Number(el('portfolioExact').value) || 25000));
+el('jurisdiction').addEventListener('change', calculate);
+
+function resetDefaults(){
+  el('companyName').value = ''; el('projectName').value = ''; el('assessmentYear').value = 2026;
+  el('portfolioExact').value = 25000; el('portfolioArea').value = 25000;
+  syncPortfolioControls();
+  const start = {rice:10000, corn:6000, cotton:5000, other:4000};
+  KEYS.forEach(k=>{ el(k+'Area').value = start[k]; el(k+'Alloc').value = start[k]; });
+  el('seasons').value = 1; el('jurisdiction').value = 'india';
+  el('deduction').value = 0; el('otherFactor').value = 0;
+  el('additionality').checked = false;
+  applyPreset('full');
+}
+
+calculate();
+</script>
+
+</main>
+<footer><div><strong>SAGE HARVEST</strong><p>Seed Supply Chain. Reimagined.</p></div><div class="footer-columns"><div class="footer-column"><strong>Explore</strong><a href="services.html">Services</a><a href="digital-ai.html">Digital &amp; AI</a><a href="sustainability.html">Sustainability</a><a href="international-expansion.html">International Expansion</a><a href="case-studies.html">Perspectives</a><a href="insights.html">Insights</a></div><div class="footer-column"><strong>Company</strong><a href="about.html">About</a><a href="founder.html">Founder</a><a href="careers.html">Careers &amp; Collaboration</a><a href="labs.html">Labs</a><a href="contact.html">Contact</a></div><div class="footer-column"><strong>Trust &amp; Governance</strong><a href="privacy.html">Privacy</a><a href="confidentiality.html">Confidentiality</a><a href="professional-standards.html">Professional Standards</a><a href="ai-puja.html">AI &amp; Puja</a></div></div><p class="copyright">© 2026 Sage Harvest Agro Pvt. Limited</p></footer>
+<div class="puja-widget" id="pujaWidget" aria-label="Puja AI Assistant"><button class="puja-launcher" id="pujaLauncher" type="button" aria-label="Open Puja assistant" aria-expanded="false" aria-controls="pujaPanel"><span class="puja-avatar-mini" id="pujaMiniAvatar"><img class="puja-avatar-image" src="assets/img/puja-avatar-reference.jpg?v=20261007-avatar2" alt="Puja, Sage Harvest virtual agent"></span><span class="puja-launcher-label">Ask Puja</span></button><section class="puja-panel" id="pujaPanel" aria-hidden="true" inert><header class="puja-header"><div class="puja-identity"><div class="puja-avatar" id="pujaAvatar" aria-hidden="true"><span class="puja-avatar-ring"></span><img class="puja-avatar-image" src="assets/img/puja-avatar-reference.jpg?v=20261007-avatar2" alt="Puja, Sage Harvest virtual agent"></div><div><strong>Puja</strong><span id="pujaStatus">Sage Harvest Guide</span></div></div><button class="puja-close" id="pujaClose" type="button" aria-label="Close Puja">×</button></header><div class="puja-messages" id="pujaMessages" aria-live="polite"><div class="puja-message puja-message-bot"><div class="puja-message-avatar">P</div><div class="puja-message-content">Hello. I’m Puja, the Sage Harvest guide. Ask me about our services, supply-chain transformation, AI, sustainability, M&amp;A due diligence or international expansion. You can also use the microphone where your browser supports speech recognition.</div></div></div><div class="puja-quick-actions"><button type="button" data-puja-question="What does Sage Harvest do?">What is Sage Harvest?</button><button type="button" data-puja-question="Tell me about M&A due diligence.">M&amp;A Due Diligence</button><button type="button" data-puja-question="Tell me about international expansion.">Global Expansion</button><button type="button" data-puja-question="Tell me about AI and data.">AI &amp; Data</button></div><form class="puja-input-area" id="pujaForm"><button class="puja-mic" id="pujaMic" type="button" aria-label="Speak to Puja" title="Speak to Puja">🎙</button><input id="pujaInput" type="text" autocomplete="off" placeholder="Ask Puja something..." aria-label="Message Puja"><button class="puja-send" type="submit" aria-label="Send message">➤</button></form><footer class="puja-footer"><span>AI-assisted voice · Live</span><button type="button" id="pujaStopSpeaking">Stop voice</button><small>Puja is an AI-assisted voice guide based on information published on the Sage Harvest website.</small></footer></section></div><script src="assets/js/main.js?v=20261007-site-audit1"></script><script src="puja-ui.js?v=20261008-knowledge19"></script><script src="puja-live-20261006-v3.js"></script>
+</body>
+</html>
