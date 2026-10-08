@@ -606,6 +606,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
         }
 
         if(s.turnComplete){
+          window.clearTimeout(window.__pujaLiveResponseWatch);
           responsePending=false;
           if(activeVoiceTurnId){
             if(!pujaDebugTurn||pujaDebugTurn.id!==activeVoiceTurnId){
@@ -741,6 +742,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
           ? ("This is a simple courtesy/greeting. Respond naturally as Puja without introducing unsupported factual claims.\n\nVISITOR: "+q)
           : ("REPHRASE BEFORE REFUSAL — The visitor's speech transcript may contain recognition errors. First silently rephrase the question to the closest meaning supported by the published Sage Harvest website context. Do not add or invent facts while rephrasing. If the published website still does not clearly answer the rephrased question, speak exactly: \""+noKnowledgeAnswer()+"\"\n\nVISITOR QUESTION: "+q+"\n\nLOCALLY REPAIRED QUESTION IF ANY: "+(qctx.rephrasedQuery||q)));
       socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:groundingText}]}],turnComplete:true}}));
+      scheduleLiveResponseWatch(responseSerial,q,qctx);
       suppressPlayback=false;
       pujaDebug("grounded_turn_sent",{turnId:activeVoiceTurnId,responseSerial});
       setState(null,"Puja is answering…");
@@ -769,6 +771,20 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     setState(null,"Puja is thinking…");
   }
 
+  function scheduleLiveResponseWatch(serial, value, qctx){
+    window.clearTimeout(window.__pujaLiveResponseWatch);
+    window.__pujaLiveResponseWatch=window.setTimeout(()=>{
+      if(!responsePending||responseSerial!==serial)return;
+      console.warn("Puja Live response timeout",{serial,value});
+      responsePending=false;
+      activeVoiceTurnId=null;
+      outputRow=null;
+      outputText="";
+      setState(null,"Puja Live · no response");
+      addMessage("Puja Live did not return a response. Please try the question again in a moment.","bot");
+    },12000);
+  }
+
   async function sendTextTurn(text){
     const value=String(text||"").trim();if(!value)return;
     addMessage(value,"user");
@@ -779,6 +795,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
       if(responsePending)return;
       responsePending=true;responseSerial++;
       socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:"Answer the visitor using the authoritative Sage Harvest website knowledge already supplied in the live session. For factual content, use only the current matched published-site entries below. Preserve the existing Puja persona and guardrails. If the supplied entries do not clearly answer the question, say so and direct the visitor to contact.html. Do not invent vacancies, clients, results, fees or commitments.\n\n"+qctx.context+"\n\nVisitor question: "+value}]}],turnComplete:true}}));
+      scheduleLiveResponseWatch(responseSerial,value,qctx);
       setState(null,"Puja is thinking…");
     }catch(e){
       console.warn("Puja Live unavailable; trying compatible text mode",e);
