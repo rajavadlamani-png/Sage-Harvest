@@ -699,17 +699,8 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     // Recognition is independent of Gemini Live. If the browser captured the
     // question before Live is ready, establish the Live session now rather
     // than silently dropping the transcript.
-    try{
-      await ensureSocket();
-      await resumeOutput();
-    }catch(e){
-      console.warn("Puja Live unavailable after voice capture",e);
-      addMessage("Puja is temporarily unavailable. Please try again in a moment.","bot");
-      setState(null,"Puja · unavailable");
-      responsePending=false;
-      return;
-    }
-    if(!socket||socket.readyState!==WebSocket.OPEN||!setupReady)return;
+    // Use the reliable HTTP response path while Gemini 3.8 Live is unstable.
+    if(!voiceRecognitionWanted)return;
     const now=performance.now();
     if(q===lastVoiceTranscript&&now-lastVoiceTranscriptPerfMs<2500){
       pujaDebug("duplicate_voice_transcript_ignored",{transcript:q});
@@ -729,27 +720,18 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     turn.outboundGenerations=1;
     try{
       const qctx=await getQuestionContext(q);
-      if(pujaDebugTurn){
-        const routeMatches=qctx.matches||[];
-        pujaDebugKnowledge(knowledgeEntries.length,formatAllKnowledge().length,
-          routeMatches.length?(routedKnowledge(q).length?"routed":"keyword"):"none",routeMatches);
-        pujaDebug("voice_grounding_send",{turnId:pujaDebugTurn.id,transcript:q,matchCount:routeMatches.length,smallTalk:!!qctx.smallTalk});
-        pujaDebugRenderVoiceState();
-      }
-      const groundingText=qctx.matches.length
-        ? ("GROUNDING INSTRUCTIONS — Answer the visitor using ONLY the supplied published Sage Harvest entries below. Do not add, infer, assume or invent any factual detail that is not present in those entries. The supplied entries are authoritative; when they contain the requested information, answer it directly and do not say Sage Harvest is unaware of it. If the wording appears to contain a speech-recognition error, silently rephrase the visitor's question to the closest meaning supported by the supplied entries before answering. Do not introduce facts during rephrasing. Answer naturally and concisely.\n\n"+qctx.context+"\n\nVISITOR QUESTION: "+q+"\n\nNORMALIZED QUESTION IF NEEDED: "+(qctx.rephrasedQuery||q))
-        : (qctx.smallTalk
-          ? ("This is a simple courtesy/greeting. Respond naturally as Puja without introducing unsupported factual claims.\n\nVISITOR: "+q)
-          : ("REPHRASE BEFORE REFUSAL — The visitor's speech transcript may contain recognition errors. First silently rephrase the question to the closest meaning supported by the published Sage Harvest website context. Do not add or invent facts while rephrasing. If the published website still does not clearly answer the rephrased question, speak exactly: \""+noKnowledgeAnswer()+"\"\n\nVISITOR QUESTION: "+q+"\n\nLOCALLY REPAIRED QUESTION IF ANY: "+(qctx.rephrasedQuery||q)));
-      socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:groundingText}]}],turnComplete:true}}));
-      scheduleLiveResponseWatch(responseSerial,q,qctx);
-      suppressPlayback=false;
-      pujaDebug("grounded_turn_sent",{turnId:activeVoiceTurnId,responseSerial});
-      setState(null,"Puja is answering…");
+      pujaDebug("voice_fallback_send",{turnId:turn.id,transcript:q,matchCount:qctx.matches.length,smallTalk:!!qctx.smallTalk});
+      await sendFallbackText(q);
+      responsePending=false;
+      activeVoiceTurnId=null;
+      pujaDebugFinishTurn();pujaDebugTurn=null;
+      setState(null,"Listening…");
     }catch(e){
       responsePending=false;
-      suppressPlayback=false;
-      console.warn("Puja deterministic voice grounding failed",e);
+      activeVoiceTurnId=null;
+      console.warn("Puja voice response failed",e);
+      addMessage(e.message||"Puja is temporarily unavailable. Please try again.","bot");
+      setState(null,"Puja · unavailable");
     }
   }
 
@@ -797,12 +779,12 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
     try{
       const qctx=await getQuestionContext(value);
       if(!qctx.smallTalk&&!qctx.matches.length){addMessage(noKnowledgeAnswer(),"bot");setState(null,"Puja · ready");return;}
-      await ensureSocket();await resumeOutput();inputRow=null;
+      inputRow=null;
       if(responsePending)return;
       responsePending=true;responseSerial++;
-      socket.send(JSON.stringify({clientContent:{turns:[{role:"user",parts:[{text:"Answer the visitor using the authoritative Sage Harvest website knowledge already supplied in the live session. For factual content, use only the current matched published-site entries below. Preserve the existing Puja persona and guardrails. If the supplied entries do not clearly answer the question, say so and direct the visitor to contact.html. Do not invent vacancies, clients, results, fees or commitments.\n\n"+qctx.context+"\n\nVisitor question: "+value}]}],turnComplete:true}}));
-      scheduleLiveResponseWatch(responseSerial,value,qctx);
-      setState(null,"Puja is thinking…");
+      await sendFallbackText(value);
+      responsePending=false;
+      setState(null,"Puja · ready");
     }catch(e){
       console.warn("Puja Live unavailable; trying compatible text mode",e);
       setState(null,"Switching to compatible voice mode…");
