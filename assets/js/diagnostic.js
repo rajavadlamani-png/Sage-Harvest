@@ -118,8 +118,13 @@
     $('qNumber').textContent='Question '+(state.i+1)+' of 30';
     $('progressText').textContent=Math.round((state.i+1)/30*100)+'%';
     $('progressFill').style.width=((state.i+1)/30*100)+'%';
-    $('dimensionNo').textContent=String(dimensions.indexOf(d)+1).padStart(2,'0');
+    var di=dimensions.indexOf(d);
+    $('dimensionNo').textContent=String(di+1).padStart(2,'0');
     $('dimensionName').textContent=d.name;
+    $('dimensionStep').textContent=(di+1)+' of 10';
+    $('dimensionTitle').textContent=d.name;
+    $('prevDimension').disabled=di===0;
+    $('nextDimension').disabled=di===9;
     $('questionText').textContent=q[1];
     $('whyText').textContent=why[q[0]];
     var box=$('options');box.innerHTML='';
@@ -140,6 +145,8 @@
     if(state.i<29){state.i++;renderQuestion();}else results();
   }
   function back(){if(state.i>0){state.i--;renderQuestion();}}
+  function prevDimension(){var di=Math.floor(state.i/3);if(di>0){state.i=(di-1)*3;renderQuestion();}}
+  function nextDimension(){var di=Math.floor(state.i/3);if(di<9){state.i=(di+1)*3;renderQuestion();}}
   function switchResultTab(key){
     [['overview','Overview'],['dimensions','Dimensions'],['insights','Insights'],['moves','Moves'],['engage','Engage']].forEach(function(item){var el=$('resultPanel'+item[1]);if(el)el.hidden=item[0]!==key;});
     document.querySelectorAll('#resultTabs .diag-tab').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-tab')===key);});
@@ -189,6 +196,6 @@
   function printReport(){window.print();}
   function saveResults(){var raw=localStorage.getItem('sageHarvestDiagnosticLast');if(!raw)return;var o=JSON.parse(raw),lines=['SAGE HARVEST — SEED SUPPLY CHAIN DIAGNOSTIC','','Overall maturity: '+o.level+' — '+o.overall.toFixed(2)+'/5',''].concat(o.scores.map(function(d){return d.name+': '+d.score.toFixed(1)+' — '+level(d.score);}));var blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sage-harvest-seed-supply-chain-diagnostic.txt';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);}
   document.addEventListener('DOMContentLoaded',function(){
-    $('startBtn').addEventListener('click',start);$('nextBtn').addEventListener('click',next);$('backBtn').addEventListener('click',back);$('restartBtn').addEventListener('click',restart);$('printBtn').addEventListener('click',printReport);$('saveBtn').addEventListener('click',saveResults);
+    $('startBtn').addEventListener('click',start);$('nextBtn').addEventListener('click',next);$('backBtn').addEventListener('click',back);$('prevDimension').addEventListener('click',prevDimension);$('nextDimension').addEventListener('click',nextDimension);$('restartBtn').addEventListener('click',restart);$('printBtn').addEventListener('click',printReport);$('saveBtn').addEventListener('click',saveResults);
   });
 })();
