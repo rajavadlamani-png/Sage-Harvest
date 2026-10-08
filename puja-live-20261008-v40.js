@@ -850,7 +850,7 @@ The locally loaded published Sage Harvest knowledge is the factual source used t
               return;
             }
             // Ignore Puja's own speech/ambient speech while she is answering.
-            continue;
+            return;
           }
           if(finalText)voiceRecognition.__finalTranscript=(voiceRecognition.__finalTranscript+" "+finalText).trim();
           const display=((voiceRecognition.__finalTranscript||"")+" "+interim).trim();
